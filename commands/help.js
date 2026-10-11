@@ -11,12 +11,13 @@ module.exports = {
                 .addChoices(
                     { name: 'Fun', value: 'fun' },
                     { name: 'Utility', value: 'utility' },
-                    { name: 'Moderation', value: 'moderation' }
+                    { name: 'Moderation', value: 'moderation' },
+                    { name: 'Setup', value: 'setup' }
                 )),
 
     async execute(interaction) {
         const category = interaction.options.getString('category');
-        const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages);
+        const isAdmin = !!interaction.member?.permissions.has(PermissionsBitField.Flags.ManageMessages);
 
         const commands = {
             fun: {
@@ -36,13 +37,38 @@ module.exports = {
                     { name: "pick", description: "Pick a random server member", usage: "/pick" },
                     { name: "number", description: "Generate a random number", usage: "/number [min] [max]" },
                     { name: "remindme", description: "Set a reminder", usage: "/remindme [time] [message]" },
+                    { name: "userinfo", description: "Show information about a user", usage: "/userinfo [user]" },
+                    { name: "serverinfo", description: "Show information about this server", usage: "/serverinfo" },
+                    { name: "avatar", description: "Show a user's avatar", usage: "/avatar [user]" },
+                    { name: "ping", description: "Check the bot's latency", usage: "/ping" },
                     ...(isAdmin ? [{ name: "say", description: "Make the bot say something", usage: "/say [#channel] [message]" }] : [])
                 ]
             },
             moderation: {
                 title: "🛡️ Moderation Commands",
                 commands: [
-                    { name: "purge", description: "Bulk delete messages", usage: "/purge [amount]" }
+                    { name: "purge", description: "Bulk delete messages, optionally from one user or of one kind", usage: "/purge [amount] [user] [filter]" },
+                    { name: "kick", description: "Kick a member", usage: "/kick [user] [reason]" },
+                    { name: "ban", description: "Ban a user (works even if they left)", usage: "/ban [user] [reason] [delete_messages]" },
+                    { name: "unban", description: "Unban a user by ID", usage: "/unban [user_id] [reason]" },
+                    { name: "timeout", description: "Timeout a member, or use `off` to remove it", usage: "/timeout [user] [duration] [reason]" },
+                    { name: "slowmode", description: "Set this channel's slowmode", usage: "/slowmode [duration|off]" },
+                    { name: "lock", description: "Lock or unlock this channel", usage: "/lock [unlock] [reason]" },
+                    { name: "role", description: "Add or remove a role from a member", usage: "/role add|remove [user] [role]" },
+                    { name: "warn", description: "Warn a member (they get a DM)", usage: "/warn [user] [reason]" },
+                    { name: "warnings", description: "List, remove or clear a member's warnings", usage: "/warnings list|remove|clear [user]" }
+                ],
+                hidden: true
+            },
+            setup: {
+                title: "⚙️ Setup Commands",
+                commands: [
+                    { name: "autorole", description: "Automatically give a role to new members (or bots)", usage: "/autorole set|disable|show" },
+                    { name: "welcome", description: "Send a welcome message when someone joins", usage: "/welcome set|disable|show", note: "Placeholders: {user} {username} {server} {count}" },
+                    { name: "logs", description: "Log messages, joins/leaves, bans, kicks, timeouts, roles, voice and more", usage: "/logs set|disable|show" },
+                    { name: "honeypot", description: "Trap channel: anyone who posts there is soft banned (catches hacked accounts)", usage: "/honeypot set|disable|show" },
+                    { name: "automod", description: "Block invites/links, mass mentions, spam and brand-new accounts", usage: "/automod invites|links|mentions|spam|new_accounts|show" },
+                    { name: "selfroles", description: "Post buttons members click to get roles", usage: "/selfroles [title] [role1] ... [role10]" }
                 ],
                 hidden: true
             }
@@ -51,7 +77,8 @@ module.exports = {
         const embedColor = {
             fun: "#FF69B4", // Pink
             utility: "#4CAF50", // Green
-            moderation: "#E74C3C" // Red
+            moderation: "#E74C3C", // Red
+            setup: "#F1C40F" // Yellow
         };
 
         // If a specific category is requested
@@ -78,7 +105,7 @@ module.exports = {
 
         // If no category specified, show all visible categories
         const embed = new EmbedBuilder()
-            .setTitle("🌸 Clannad Bot Help Menu")
+            .setTitle("✨ Shirox Bot Help Menu")
             .setColor("#9B59B6")
             .setDescription("Use `/help [category]` to see detailed information about specific categories.");
 
@@ -90,6 +117,7 @@ module.exports = {
         // Only show Moderation field if user is admin
         if (isAdmin) {
             fields.push({ name: "🛡️ Moderation", value: "Moderation commands\n`/help moderation`", inline: true });
+            fields.push({ name: "⚙️ Setup", value: "Logs, honeypot, automod & more\n`/help setup`", inline: true });
         }
 
         embed.addFields(fields)

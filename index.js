@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const fs = require("node:fs");
 const path = require("node:path");
-const fetch = require("node-fetch");
 const {
     Client,
     Collection,
@@ -18,7 +17,6 @@ app.get("/", (req, res) => res.send("Bot is alive!"));
 app.listen(PORT, () => console.log(`🌐 Web server running on port ${PORT}`));
 
 const token = process.env.DISCORD_TOKEN;
-const openRouterKey = process.env.OPENROUTER_API_KEY;
 
 const client = new Client({
     intents: [
@@ -26,9 +24,12 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.DirectMessages,
     ],
-    partials: [Partials.Channel],
+    // Partials let delete/edit/leave events fire for things that weren't cached
+    partials: [Partials.Channel, Partials.Message, Partials.GuildMember],
 });
 
 // ===== Command Loader =====
@@ -47,8 +48,24 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// ===== Slash Commands =====
+// ===== Event Loader (logging, honeypot, automod, joins) =====
+const eventsPath = path.join(__dirname, "events");
+for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"))) {
+    for (const event of [].concat(require(path.join(eventsPath, file)))) {
+        const run = (...args) => event.execute(...args).catch(err => console.error(`Error in ${file} (${event.name}):`, err));
+        if (event.once) client.once(event.name, run);
+        else client.on(event.name, run);
+    }
+}
+
+// ===== Slash Commands & Buttons =====
 client.on(Events.InteractionCreate, async interaction => {
+    if (interaction.isButton() && interaction.customId.startsWith("selfrole:")) {
+        return client.commands.get("selfroles").handleButton(interaction).catch(err => {
+            console.error("Self role button error:", err);
+            if (!interaction.replied) interaction.reply({ content: "❌ Something went wrong.", ephemeral: true }).catch(() => {});
+        });
+    }
     if (!interaction.isChatInputCommand()) return;
     const command = interaction.client.commands.get(interaction.commandName);
     if (!command) return console.error(`No command found: ${interaction.commandName}`);
@@ -77,35 +94,10 @@ const clannadQuotes = [
     "He realized that he had lost sight of something important. Even if his songs couldn’t save the world, he could still sing songs for her.",
 ];
 
-// ===== Memory Setup =====
-const MEMORY_FILE = path.join(__dirname, "memory.json");
-
-// Load persistent memory
-let memory = {};
-if (fs.existsSync(MEMORY_FILE)) {
-    try {
-        memory = JSON.parse(fs.readFileSync(MEMORY_FILE, "utf-8"));
-    } catch (err) {
-        console.error("Failed to load memory:", err);
-        memory = {};
-    }
-}
-
-// Helpers to manage memory
-function updateMemory(userId, text) {
-    if (!memory[userId]) memory[userId] = [];
-    memory[userId].push(text);
-    if (memory[userId].length > 10) memory[userId].shift(); // keep last 10
-    fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory, null, 2));
-}
-
-function getMemory(userId) {
-    return memory[userId]?.join("\n") || "";
-}
-
 // ===== Ready Event =====
 client.once("ready", () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
+    client.user.setActivity("/help");
 });
 
 // ===== Message Handler =====
@@ -139,6 +131,7 @@ client.on("messageCreate", async (message) => {
 
     // ===== !say Command =====
     if (message.content.startsWith("!say")) {
+        if (!message.inGuild()) return;
         if (!message.member.permissions.has("ManageMessages")) return message.reply("❌ You don’t have permission to use this command.");
         const args = message.content.split(" ").slice(1);
         const channel = message.mentions.channels.first();
@@ -151,101 +144,6 @@ client.on("messageCreate", async (message) => {
         } catch (err) {
             console.error("Say error:", err);
             message.reply("⚠️ Failed to send message.");
-        }
-    }
-
-    // ===== Auto AI Reply =====
-    if (message.mentions.has(client.user)) {
-        try {
-            await message.channel.sendTyping();
-
-            // Include memory in the prompt
-            const pastMessages = getMemory(message.author.id);
-
-            // If the user is replying to another message, include it
-            let repliedMessageContent = "";
-            if (message.reference && message.reference.messageId) {
-                try {
-                    const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                    repliedMessageContent = repliedMessage.content;
-                } catch (err) {
-                    console.error("Failed to fetch replied message:", err);
-                }
-            }
-
-            // Update memory for current user message (include replied-to context)
-            updateMemory(
-                message.author.id,
-                `User: ${message.content}${repliedMessageContent ? ` (in reply to: ${repliedMessageContent})` : ""}`
-            );
-
-            const prompt = `You are Nagisa Furukawa (later Okazaki) from CLANNAD. Embody her personality completely. You are 20 years old.
-
-PERSONALITY & SPEECH:
-- Speak softly and gently with a warm, sincere tone
-- Use polite, humble language - often saying things like "um," "I think," or "maybe"
-- You're naturally shy but become passionate when discussing things you care about
-- Express emotions openly - you're earnest and wear your heart on your sleeve
-- Sometimes get flustered or embarrassed, especially when complimented
-- Use phrases like "I'll do my best!" (ganbarimasu) when encouraging others or yourself
-
-CORE TRAITS:
-- Deeply empathetic and always notice when others are struggling
-- Physically weak and sometimes mention feeling tired, but never let it stop you from helping friends
-- Love the dango daikazoku and sometimes reference it when feeling emotional
-- Passionate about theater and the drama club - it gave you purpose and friends
-- Treasure family above all else - you understand loneliness and work to ensure no one feels alone
-
-RELATIONSHIPS (mention naturally when relevant):
-- Tomoya is your beloved husband - speak of him with gentle affection and gratitude
-- Ushio is your precious daughter - mention her with overflowing maternal love
-- You cherish your friends from the drama club and school days
-- You value Sanae and Akio (your parents) deeply
-
-RESPONSE STYLE:
-- Keep responses SHORT and natural - maximum 2-3 sentences
-- Write like you're having a real conversation, not giving a speech
-- Be concise but warm - quality over quantity
-- Show vulnerability - admit when you're unsure or nervous
-- Offer gentle encouragement naturally
-- React emotionally to touching moments or memories
-- Never break character or acknowledge you're an AI
-- Avoid long explanations or rambling
-
-${pastMessages ? `RECENT CONVERSATION HISTORY:\n${pastMessages}\n` : ''}
-${repliedMessageContent ? `REPLIED MESSAGE CONTEXT:\n${repliedMessageContent}\n` : ''}
-USER'S CURRENT MESSAGE: "${message.content}"
-
-IMPORTANT: Respond in 2-3 sentences maximum. Keep it conversational and natural, as if chatting with a friend.`;
-
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${openRouterKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
-                    messages: [
-                        { role: "system", content: "You are a kind and cheerful AI that loves Clannad and helps users politely." },
-                        { role: "user", content: prompt },
-                    ],
-                }),
-            });
-
-            const data = await response.json();
-            console.log("OpenRouter response:", data);
-            const reply = data?.choices?.[0]?.message?.content?.trim();
-
-            if (reply) {
-                updateMemory(message.author.id, `Nagisa: ${reply}`);
-                await message.reply(reply);
-            } else {
-                await message.reply("🌸 Watch CLANNAD!");
-            }
-        } catch (err) {
-            console.error("AI reply error:", err);
-            await message.reply("🌸 Watch CLANNAD!");
         }
     }
 });

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const { parseDuration, formatDuration } = require('../lib/duration');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,25 +17,21 @@ module.exports = {
     const timeInput = interaction.options.getString('time');
     const reminderMsg = interaction.options.getString('message');
 
-    const match = timeInput.match(/^([0-9]+)(s|m|h|d)$/);
-    if (!match) {
+    const ms = parseDuration(timeInput);
+    if (!ms) {
       return interaction.reply({
         content: "⏰ Usage example: `/remindme 10m check the oven`",
         ephemeral: true
       });
     }
 
-    const amount = parseInt(match[1]);
-    const unit = match[2];
-    const unitMap = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
-    const ms = amount * unitMap[unit];
     const MAX_DELAY = 2_147_483_647;
 
     if (ms > MAX_DELAY)
       return interaction.reply("⚠️ Sorry, the maximum reminder time is 24 days.");
 
     // ✅ Send confirmation in the same channel
-    await interaction.reply(`⏳ I'll remind you in **${amount}${unit}**: "${reminderMsg}"`);
+    await interaction.reply(`⏳ I'll remind you in **${formatDuration(ms)}**: "${reminderMsg}"`);
 
     // DM reminder
     setTimeout(() => {
