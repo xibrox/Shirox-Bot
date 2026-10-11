@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ module.exports = {
     const member = interaction.options.getMember('user') || (user.id === interaction.user.id ? interaction.member : null);
 
     const embed = new EmbedBuilder()
-      .setColor(member?.displayHexColor && member.displayHexColor !== '#000000' ? member.displayHexColor : '#5865F2')
+      .setColor(member?.displayHexColor && member.displayHexColor !== '#000000' ? member.displayHexColor : EMBED_COLOR)
       .setAuthor({ name: user.tag, iconURL: user.displayAvatarURL() })
       .setThumbnail(user.displayAvatarURL({ size: 256 }))
       .addFields(

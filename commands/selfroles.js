@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EMBED_COLOR } = require('../lib/colors');
 const { checkAssignableRole } = require('../lib/moderation');
 
 const MAX_ROLES = 10;
@@ -32,7 +33,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setColor('#5865F2')
+      .setColor(EMBED_COLOR)
       .setTitle(interaction.options.getString('title'))
       .setDescription(
         (interaction.options.getString('description') || 'Click a button to get or remove a role.') +

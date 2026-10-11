@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +25,7 @@ module.exports = {
 
         const quote = quotes[Math.floor(Math.random() * quotes.length)];
         const embed = new EmbedBuilder()
-            .setColor("Blurple")
+            .setColor(EMBED_COLOR)
             .setTitle("🌸 Clannad Quote")
             .setDescription(quote);
 

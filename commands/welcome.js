@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
-const PLACEHOLDERS = '`{user}` mention, `{username}` name, `{server}` server name, `{count}` member count';
+const { PLACEHOLDERS } = require('../lib/greetings');
 
 module.exports = {
   data: new SlashCommandBuilder()

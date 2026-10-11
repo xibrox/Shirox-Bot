@@ -1,4 +1,6 @@
 const { Events } = require("discord.js");
+const { getGuildConfig } = require("../lib/guildConfig");
+const { sendGreeting } = require("../lib/greetings");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField, isSuppressed } = require("../lib/logger");
 
 module.exports = {
@@ -9,6 +11,12 @@ module.exports = {
         // Bans fire their own log; a leave right after a ban would just be noise
         const ban = await findAuditEntry(member.guild, AuditLogEvent.MemberBanAdd, member.id);
         if (ban) return;
+
+        const config = getGuildConfig(member.guild.id);
+        if (config.goodbyeChannelId) {
+            const template = config.goodbyeMessage || "**{username}** has left **{server}**. We now have {count} members. 👋";
+            await sendGreeting(member, config.goodbyeChannelId, template, false);
+        }
 
         const kick = await findAuditEntry(member.guild, AuditLogEvent.MemberKick, member.id);
         const embed = kick

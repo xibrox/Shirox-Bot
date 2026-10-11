@@ -1,5 +1,6 @@
-const { Events, EmbedBuilder } = require("discord.js");
+const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { sendGreeting } = require("../lib/greetings");
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require("../lib/logger");
 
 const DAY_MS = 86_400_000;
@@ -40,20 +41,8 @@ async function giveAutoRole(member, config) {
 
 async function sendWelcome(member, config) {
     if (!config.welcomeChannelId) return;
-    const channel = member.guild.channels.cache.get(config.welcomeChannelId);
-    if (!channel?.isTextBased()) return;
-
-    const text = (config.welcomeMessage || "Welcome to **{server}**, {user}! 🎉")
-        .replaceAll("{user}", `${member}`)
-        .replaceAll("{username}", member.user.username)
-        .replaceAll("{server}", member.guild.name)
-        .replaceAll("{count}", `${member.guild.memberCount}`);
-    const embed = new EmbedBuilder()
-        .setColor("#5865F2")
-        .setDescription(text)
-        .setThumbnail(member.user.displayAvatarURL());
-    await channel.send({ content: `${member}`, embeds: [embed] }).catch(err =>
-        console.error(`Failed to send welcome message in ${member.guild.name}:`, err.message));
+    const template = config.welcomeMessage || "Welcome to **{server}**, {user}! 🎉";
+    await sendGreeting(member, config.welcomeChannelId, template, true);
 }
 
 module.exports = {

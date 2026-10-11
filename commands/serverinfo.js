@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
+const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ module.exports = {
     const channels = guild.channels.cache;
 
     const embed = new EmbedBuilder()
-      .setColor('#5865F2')
+      .setColor(EMBED_COLOR)
       .setTitle(guild.name)
       .setThumbnail(guild.iconURL({ size: 256 }))
       .addFields(

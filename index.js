@@ -10,6 +10,7 @@ const {
     EmbedBuilder,
     Partials,
 } = require("discord.js");
+const { EMBED_COLOR } = require("./lib/colors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,7 +109,7 @@ client.on("messageCreate", async (message) => {
     // ===== Fun Commands =====
     if (msg === "!quote") {
         const quote = clannadQuotes[Math.floor(Math.random() * clannadQuotes.length)];
-        const embed = new EmbedBuilder().setColor("Blurple").setTitle("🌸 Clannad Quote").setDescription(quote);
+        const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle("🌸 Clannad Quote").setDescription(quote);
         return message.channel.send({ embeds: [embed] });
     }
 

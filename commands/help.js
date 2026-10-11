@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -65,6 +66,7 @@ module.exports = {
                 commands: [
                     { name: "autorole", description: "Automatically give a role to new members (or bots)", usage: "/autorole set|disable|show" },
                     { name: "welcome", description: "Send a welcome message when someone joins", usage: "/welcome set|disable|show", note: "Placeholders: {user} {username} {server} {count}" },
+                    { name: "goodbye", description: "Send a message when someone leaves", usage: "/goodbye set|disable|show", note: "Placeholders: {user} {username} {server} {count}" },
                     { name: "logs", description: "Log messages, joins/leaves, bans, kicks, timeouts, roles, voice and more", usage: "/logs set|disable|show" },
                     { name: "honeypot", description: "Trap channel: anyone who posts there is soft banned (catches hacked accounts)", usage: "/honeypot set|disable|show" },
                     { name: "automod", description: "Block invites/links, mass mentions, spam and brand-new accounts", usage: "/automod invites|links|mentions|spam|new_accounts|show" },
@@ -106,7 +108,7 @@ module.exports = {
         // If no category specified, show all visible categories
         const embed = new EmbedBuilder()
             .setTitle("✨ Shirox Bot Help Menu")
-            .setColor("#9B59B6")
+            .setColor(EMBED_COLOR)
             .setDescription("Use `/help [category]` to see detailed information about specific categories.");
 
         const fields = [
@@ -117,7 +119,7 @@ module.exports = {
         // Only show Moderation field if user is admin
         if (isAdmin) {
             fields.push({ name: "🛡️ Moderation", value: "Moderation commands\n`/help moderation`", inline: true });
-            fields.push({ name: "⚙️ Setup", value: "Logs, honeypot, automod & more\n`/help setup`", inline: true });
+            fields.push({ name: "⚙️ Setup", value: "Logs, honeypot, welcome/goodbye & more\n`/help setup`", inline: true });
         }
 
         embed.addFields(fields)
