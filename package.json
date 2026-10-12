@@ -19,9 +19,20 @@
   "homepage": "https://github.com/xibrox/Clannad-Discord-Bot#readme",
   "description": "Shirox Bot - a Discord bot with moderation, auto role, welcome messages and fun commands",
   "dependencies": {
+    "@jsquash/avif": "^2.1.1",
+    "@jsquash/webp": "^1.5.0",
     "discord.js": "^14.20.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "sharp": "^0.35.5"
+    "gifenc": "^1.0.3",
+    "heic-decode": "^2.1.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0"
+  },
+  "trustedDependencies": [
+    "ffmpeg-static"
+  ],
+  "optionalDependencies": {
+    "ffmpeg-static": "^5.3.0"
   }
 }
