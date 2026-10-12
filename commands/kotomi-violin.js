@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
+  category: 'fun',
   data: new SlashCommandBuilder()
     .setName('kotomi-violin')
     .setDescription("Play Kotomi's legendary violin 🎻"),

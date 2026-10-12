@@ -5,6 +5,7 @@ const { parseDuration, formatDuration } = require('../lib/duration');
 const MAX_TIMEOUT = 28 * 86_400_000;
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('timeout')
     .setDescription('Timeout (mute) a member, or remove their timeout')

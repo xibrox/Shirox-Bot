@@ -3,6 +3,7 @@ const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { checkAssignableRole } = require('../lib/moderation');
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('autorole')
     .setDescription('Automatically give a role to new members')

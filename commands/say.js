@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('say')
     .setDescription('Make the bot say something (optionally in another channel)')

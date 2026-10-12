@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
+  category: 'utility',
   data: new SlashCommandBuilder()
     .setName('number')
     .setDescription('Generate a random number between min and max')

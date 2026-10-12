@@ -1,7 +1,9 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { COLORS } = require('../lib/colors');
 const { getWarnings, removeWarning, clearWarnings } = require('../lib/warnings');
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('warnings')
     .setDescription("View or manage a member's warnings")
@@ -46,7 +48,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setColor('#F1C40F')
+      .setColor(COLORS.warning)
       .setTitle(`⚠️ Warnings for ${user.tag} (${warnings.length})`)
       .setThumbnail(user.displayAvatarURL())
       .setDescription(warnings.slice(-15).map(w =>

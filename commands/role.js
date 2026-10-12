@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { checkAssignableRole } = require('../lib/moderation');
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('role')
     .setDescription('Add or remove a role from a member')

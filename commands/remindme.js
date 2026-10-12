@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { parseDuration, formatDuration } = require('../lib/duration');
 
 module.exports = {
+  category: 'utility',
   data: new SlashCommandBuilder()
     .setName('remindme')
     .setDescription('Set a reminder')

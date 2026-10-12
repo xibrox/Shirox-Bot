@@ -4,6 +4,7 @@ const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { PLACEHOLDERS } = require('../lib/greetings');
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('welcome')
     .setDescription('Configure welcome messages for new members')

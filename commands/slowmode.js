@@ -4,6 +4,7 @@ const { parseDuration, formatDuration } = require('../lib/duration');
 const MAX_SLOWMODE = 6 * 3_600_000;
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('slowmode')
     .setDescription('Set the slowmode for this channel')

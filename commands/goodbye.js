@@ -4,6 +4,7 @@ const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { PLACEHOLDERS } = require('../lib/greetings');
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('goodbye')
     .setDescription('Configure goodbye messages when members leave')

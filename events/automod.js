@@ -44,11 +44,12 @@ async function punish(message, rule, { timeoutMs, messages = [message] } = {}) {
     ).catch(() => null);
     if (notice) setTimeout(() => notice.delete().catch(() => {}), 6_000);
 
-    const embed = createLogEmbed("moderation", "🛡️ Automod")
+    const embed = createLogEmbed("danger", "🛡️ Automod")
         .addFields(
             { name: "User", value: userField(message.author) },
             { name: "Rule", value: rule, inline: true },
             { name: "Channel", value: `${message.channel}`, inline: true },
+            { name: "Message ID", value: `\`${message.id}\``, inline: true },
             { name: "Message", value: truncate(message.content) },
         );
     if (timedOut) embed.addFields({ name: "Action", value: `Timed out for ${timeoutMs / 60_000}m` });

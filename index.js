@@ -11,6 +11,7 @@ const {
     Partials,
 } = require("discord.js");
 const { EMBED_COLOR } = require("./lib/colors");
+const { getGuildConfig } = require("./lib/guildConfig");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,24 +60,38 @@ for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"
     }
 }
 
-// ===== Slash Commands & Buttons =====
+// ===== Slash Commands, Right-click Apps, Buttons, Menus & Forms =====
+// Buttons, dropdowns and forms use customIds like "<command>:<data>" and are routed back to that command
+const COMPONENT_ALIASES = { selfrole: "selfroles" };
+
+async function replyWithError(interaction) {
+    const errorMsg = { content: "There was an error executing this command!", ephemeral: true };
+    if (interaction.replied || interaction.deferred) await interaction.followUp(errorMsg).catch(() => {});
+    else await interaction.reply(errorMsg).catch(() => {});
+}
+
 client.on(Events.InteractionCreate, async interaction => {
-    if (interaction.isButton() && interaction.customId.startsWith("selfrole:")) {
-        return client.commands.get("selfroles").handleButton(interaction).catch(err => {
-            console.error("Self role button error:", err);
-            if (!interaction.replied) interaction.reply({ content: "❌ Something went wrong.", ephemeral: true }).catch(() => {});
-        });
-    }
-    if (!interaction.isChatInputCommand()) return;
-    const command = interaction.client.commands.get(interaction.commandName);
-    if (!command) return console.error(`No command found: ${interaction.commandName}`);
     try {
+        if (interaction.isAutocomplete()) {
+            const command = client.commands.get(interaction.commandName);
+            return await command?.autocomplete?.(interaction);
+        }
+
+        if (interaction.isMessageComponent() || interaction.isModalSubmit()) {
+            const prefix = interaction.customId.split(":")[0];
+            const command = client.commands.get(COMPONENT_ALIASES[prefix] ?? prefix);
+            const handler = interaction.isModalSubmit() ? command?.handleModal : command?.handleComponent;
+            if (handler) await handler.call(command, interaction);
+            return;
+        }
+
+        if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return;
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return console.error(`No command found: ${interaction.commandName}`);
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
-        const errorMsg = { content: "There was an error executing this command!", ephemeral: true };
-        if (interaction.replied || interaction.deferred) await interaction.followUp(errorMsg);
-        else await interaction.reply(errorMsg);
+        console.error(`Interaction error (${interaction.commandName ?? interaction.customId}):`, error);
+        if (!interaction.isAutocomplete()) await replyWithError(interaction);
     }
 });
 
@@ -96,9 +111,16 @@ const clannadQuotes = [
 ];
 
 // ===== Ready Event =====
-client.once("ready", () => {
+client.once("ready", async () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     client.user.setActivity("/help");
+
+    // Role restore needs to know members' roles when they leave, so cache those servers' members
+    for (const guild of client.guilds.cache.values()) {
+        if (getGuildConfig(guild.id).restoreRoles) {
+            await guild.members.fetch().catch(err => console.error(`Failed to fetch members of ${guild.name}:`, err.message));
+        }
+    }
 });
 
 // ===== Message Handler =====

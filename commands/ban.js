@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { checkHierarchy } = require('../lib/moderation');
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('ban')
     .setDescription('Ban a user from the server')

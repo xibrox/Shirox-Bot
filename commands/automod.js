@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('automod')
     .setDescription('Automatic moderation (staff with Manage Messages are ignored)')

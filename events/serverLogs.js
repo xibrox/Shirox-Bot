@@ -11,11 +11,11 @@ module.exports = [
 
             let embed;
             if (!oldState.channelId) {
-                embed = createLogEmbed("voice", "🔊 Joined voice").addFields({ name: "Channel", value: `${newState.channel}` });
+                embed = createLogEmbed("default", "🔊 Joined voice").addFields({ name: "Channel", value: `${newState.channel}` });
             } else if (!newState.channelId) {
-                embed = createLogEmbed("voice", "🔇 Left voice").addFields({ name: "Channel", value: `${oldState.channel}` });
+                embed = createLogEmbed("default", "🔇 Left voice").addFields({ name: "Channel", value: `${oldState.channel}` });
             } else {
-                embed = createLogEmbed("voice", "🔀 Switched voice").addFields(
+                embed = createLogEmbed("default", "🔀 Switched voice").addFields(
                     { name: "From", value: `${oldState.channel}`, inline: true },
                     { name: "To", value: `${newState.channel}`, inline: true },
                 );
@@ -28,7 +28,7 @@ module.exports = [
         name: Events.ChannelCreate,
         async execute(channel) {
             if (!channel.guild) return;
-            const embed = createLogEmbed("server", "📁 Channel created")
+            const embed = createLogEmbed("success", "📁 Channel created")
                 .addFields({ name: "Channel", value: `${channel} (\`${channel.name}\`, ${ChannelType[channel.type]})` });
             await sendLog(channel.guild, embed);
         },
@@ -37,7 +37,7 @@ module.exports = [
         name: Events.ChannelDelete,
         async execute(channel) {
             if (!channel.guild) return;
-            const embed = createLogEmbed("server", "🗑️ Channel deleted")
+            const embed = createLogEmbed("danger", "🗑️ Channel deleted")
                 .addFields({ name: "Channel", value: `\`#${channel.name}\` (${ChannelType[channel.type]})` });
             await sendLog(channel.guild, embed);
         },
@@ -45,14 +45,14 @@ module.exports = [
     {
         name: Events.GuildRoleCreate,
         async execute(role) {
-            const embed = createLogEmbed("server", "🎭 Role created").addFields({ name: "Role", value: `${role} (\`${role.name}\`)` });
+            const embed = createLogEmbed("success", "🎭 Role created").addFields({ name: "Role", value: `${role} (\`${role.name}\`)` });
             await sendLog(role.guild, embed);
         },
     },
     {
         name: Events.GuildRoleDelete,
         async execute(role) {
-            const embed = createLogEmbed("server", "🗑️ Role deleted").addFields({ name: "Role", value: `\`${role.name}\`` });
+            const embed = createLogEmbed("danger", "🗑️ Role deleted").addFields({ name: "Role", value: `\`${role.name}\`` });
             await sendLog(role.guild, embed);
         },
     },

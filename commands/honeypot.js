@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
+const { COLORS } = require('../lib/colors');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 const ACTION_LABELS = {
@@ -8,6 +9,7 @@ const ACTION_LABELS = {
 };
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('honeypot')
     .setDescription('Trap channel that catches hacked/spam accounts posting in it')
@@ -60,7 +62,7 @@ module.exports = {
 
       if (postWarning) {
         const embed = new EmbedBuilder()
-          .setColor('#E74C3C')
+          .setColor(COLORS.danger)
           .setTitle('⚠️ DO NOT SEND MESSAGES IN THIS CHANNEL')
           .setDescription(
             'This channel is a trap for hacked accounts and spam bots.\n\n' +

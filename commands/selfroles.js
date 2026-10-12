@@ -18,6 +18,7 @@ data
   .setDMPermission(false);
 
 module.exports = {
+  category: 'setup',
   data,
 
   async execute(interaction) {
@@ -59,7 +60,7 @@ module.exports = {
   },
 
   // Handles clicks on the panel's buttons (customId "selfrole:<roleId>")
-  async handleButton(interaction) {
+  async handleComponent(interaction) {
     const roleId = interaction.customId.split(':')[1];
     const role = interaction.guild.roles.cache.get(roleId);
     if (!role) return interaction.reply({ content: '❌ That role no longer exists.', ephemeral: true });

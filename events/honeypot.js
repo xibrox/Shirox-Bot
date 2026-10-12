@@ -1,5 +1,6 @@
 const { Events, PermissionFlagsBits } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { softban } = require("../lib/moderation");
 const { createLogEmbed, sendLog, truncate, userField, suppressLogsFor } = require("../lib/logger");
 
 // Hacked accounts usually spam several channels at once; only act once per user
@@ -24,10 +25,11 @@ module.exports = {
         suppressLogsFor(member.id);
         await message.delete().catch(() => {});
 
-        const embed = createLogEmbed("moderation", "🍯 Honeypot triggered")
+        const embed = createLogEmbed("danger", "🍯 Honeypot triggered")
             .setThumbnail(message.author.displayAvatarURL())
             .addFields(
                 { name: "User", value: userField(message.author) },
+                { name: "Message ID", value: `\`${message.id}\``, inline: true },
                 { name: "Message", value: truncate(message.content || "*no text (attachment/embed)*") },
             );
 
@@ -41,12 +43,9 @@ module.exports = {
                 `If this wasn't you, your account is probably compromised: **change your password, enable 2FA, and remove any unknown authorized apps/devices** in Discord settings.${rejoinNote}`,
             ).catch(() => {});
 
-            if (action === "kick") {
-                await member.kick(reason);
-            } else {
-                await message.guild.members.ban(member.id, { reason, deleteMessageSeconds: 86_400 });
-                if (action === "softban") await message.guild.members.unban(member.id, "Honeypot soft ban");
-            }
+            if (action === "kick") await member.kick(reason);
+            else if (action === "softban") await softban(message.guild, member.id, reason);
+            else await message.guild.members.ban(member.id, { reason, deleteMessageSeconds: 86_400 });
 
             const labels = { softban: "Soft banned (last 24h of messages deleted)", ban: "Banned (last 24h of messages deleted)", kick: "Kicked" };
             embed.addFields({ name: "Action", value: labels[action] });

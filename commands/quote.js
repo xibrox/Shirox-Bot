@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
+    category: 'fun',
     data: new SlashCommandBuilder()
         .setName('quote')
         .setDescription('Get a random Clannad quote'),

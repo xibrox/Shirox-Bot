@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
+    category: 'fun',
     data: new SlashCommandBuilder()
         .setName('sadscale')
         .setDescription('Get a random sadness scale rating (0-10)'),

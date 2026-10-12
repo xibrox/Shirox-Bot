@@ -1,6 +1,7 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
 const { sendGreeting } = require("../lib/greetings");
+const { saveMemberRoles } = require("../lib/savedRoles");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField, isSuppressed } = require("../lib/logger");
 
 module.exports = {
@@ -13,6 +14,7 @@ module.exports = {
         if (ban) return;
 
         const config = getGuildConfig(member.guild.id);
+        if (config.restoreRoles && !member.partial) saveMemberRoles(member);
         if (config.goodbyeChannelId) {
             const template = config.goodbyeMessage || "**{username}** has left **{server}**. We now have {count} members. 👋";
             await sendGreeting(member, config.goodbyeChannelId, template, false);
@@ -20,12 +22,12 @@ module.exports = {
 
         const kick = await findAuditEntry(member.guild, AuditLogEvent.MemberKick, member.id);
         const embed = kick
-            ? createLogEmbed("moderation", "👢 Member kicked").addFields(
+            ? createLogEmbed("danger", "👢 Member kicked").addFields(
                 { name: "User", value: userField(member.user) },
                 { name: "Moderator", value: userField(kick.executor) },
                 { name: "Reason", value: kick.reason || "No reason provided" },
             )
-            : createLogEmbed("leave", "📤 Member left").addFields({ name: "User", value: userField(member.user) });
+            : createLogEmbed("warning", "📤 Member left").addFields({ name: "User", value: userField(member.user) });
 
         embed.setThumbnail(member.user.displayAvatarURL());
         if (member.joinedTimestamp) {

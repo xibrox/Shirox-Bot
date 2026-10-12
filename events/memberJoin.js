@@ -1,6 +1,7 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
 const { sendGreeting } = require("../lib/greetings");
+const { restoreMemberRoles } = require("../lib/savedRoles");
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require("../lib/logger");
 
 const DAY_MS = 86_400_000;
@@ -17,7 +18,7 @@ async function kickIfTooNew(member, config) {
     suppressLogsFor(member.id);
     await member.kick(`Automod: account younger than ${minDays} day(s)`).catch(() => {});
 
-    const embed = createLogEmbed("moderation", "🆕 New account kicked")
+    const embed = createLogEmbed("danger", "🆕 New account kicked")
         .setThumbnail(member.user.displayAvatarURL())
         .addFields(
             { name: "User", value: userField(member.user) },
@@ -25,6 +26,20 @@ async function kickIfTooNew(member, config) {
         );
     await sendLog(member.guild, embed);
     return true;
+}
+
+async function restoreRoles(member, config) {
+    if (!config.restoreRoles) return;
+    const result = await restoreMemberRoles(member).catch(err => {
+        console.error(`Failed to restore roles in ${member.guild.name}:`, err.message);
+        return null;
+    });
+    if (!result || (!result.restored.length && !result.nickname)) return;
+
+    const embed = createLogEmbed("success", "♻️ Roles restored").addFields({ name: "User", value: userField(member.user) });
+    if (result.restored.length) embed.addFields({ name: "Roles", value: result.restored.map(r => `${r}`).join(" ").slice(0, 1024) });
+    if (result.nickname) embed.addFields({ name: "Nickname", value: result.nickname });
+    await sendLog(member.guild, embed);
 }
 
 async function giveAutoRole(member, config) {
@@ -51,11 +66,12 @@ module.exports = {
         const config = getGuildConfig(member.guild.id);
         if (await kickIfTooNew(member, config)) return;
 
+        await restoreRoles(member, config);
         await giveAutoRole(member, config);
         await sendWelcome(member, config);
 
         const ageDays = (Date.now() - member.user.createdTimestamp) / DAY_MS;
-        const embed = createLogEmbed("member", "📥 Member joined")
+        const embed = createLogEmbed("success", "📥 Member joined")
             .setThumbnail(member.user.displayAvatarURL())
             .addFields(
                 { name: "User", value: userField(member.user) },

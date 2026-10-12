@@ -8,7 +8,7 @@ module.exports = {
         const guild = newMember.guild;
 
         if (oldMember.nickname !== newMember.nickname) {
-            const embed = createLogEmbed("member", "✏️ Nickname changed")
+            const embed = createLogEmbed("update", "✏️ Nickname changed")
                 .addFields(
                     { name: "User", value: userField(newMember.user) },
                     { name: "Before", value: oldMember.nickname || "*none*", inline: true },
@@ -20,7 +20,7 @@ module.exports = {
         const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
         const removed = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
         if (added.size || removed.size) {
-            const embed = createLogEmbed("member", "🎭 Roles updated").addFields({ name: "User", value: userField(newMember.user) });
+            const embed = createLogEmbed("update", "🎭 Roles updated").addFields({ name: "User", value: userField(newMember.user) });
             if (added.size) embed.addFields({ name: "Added", value: added.map(r => `${r}`).join(" ") });
             if (removed.size) embed.addFields({ name: "Removed", value: removed.map(r => `${r}`).join(" ") });
             await sendLog(guild, embed);
@@ -31,7 +31,7 @@ module.exports = {
         if (oldTimeout !== newTimeout) {
             const isTimedOut = newTimeout && newTimeout > Date.now();
             const entry = await findAuditEntry(guild, AuditLogEvent.MemberUpdate, newMember.id);
-            const embed = createLogEmbed(isTimedOut ? "moderation" : "member", isTimedOut ? "🔇 Member timed out" : "🔊 Timeout removed")
+            const embed = createLogEmbed(isTimedOut ? "warning" : "success", isTimedOut ? "🔇 Member timed out" : "🔊 Timeout removed")
                 .addFields({ name: "User", value: userField(newMember.user) });
             if (isTimedOut) embed.addFields({ name: "Until", value: `<t:${Math.floor(newTimeout / 1000)}:F>` });
             if (entry) embed.addFields({ name: "Moderator", value: userField(entry.executor) });

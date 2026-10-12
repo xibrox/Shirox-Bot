@@ -3,6 +3,7 @@ const { addWarning } = require('../lib/warnings');
 const { createLogEmbed, sendLog, userField } = require('../lib/logger');
 
 module.exports = {
+  category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('warn')
     .setDescription('Warn a member')
@@ -26,7 +27,7 @@ module.exports = {
       (dmSent ? '' : "\n*(Couldn't DM them.)*"),
     );
 
-    const embed = createLogEmbed('moderation', '⚠️ Member warned')
+    const embed = createLogEmbed('warning', '⚠️ Member warned')
       .addFields(
         { name: 'User', value: userField(user) },
         { name: 'Moderator', value: userField(interaction.user) },

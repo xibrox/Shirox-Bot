@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('disco
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 module.exports = {
+  category: 'setup',
   data: new SlashCommandBuilder()
     .setName('logs')
     .setDescription('Log server activity (messages, members, moderation, voice) to a channel')

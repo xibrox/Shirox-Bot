@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 const { EMBED_COLOR } = require('../lib/colors');
 
 module.exports = {
+  category: 'utility',
   data: new SlashCommandBuilder()
     .setName('serverinfo')
     .setDescription('Show information about this server')
