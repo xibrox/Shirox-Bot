@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, OAuth2Scopes, PermissionFlagsBits } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
+const { getSupportInviteUrl } = require('../lib/supportInvite');
 
 // Everything the bot's features need (moderation, logging, honeypot, roles, welcome...)
 const REQUIRED_PERMISSIONS = [
@@ -33,8 +34,9 @@ module.exports = {
     });
 
     const buttons = [new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Add to server').setURL(url)];
-    if (process.env.SUPPORT_SERVER_URL) {
-      buttons.push(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Support server').setURL(process.env.SUPPORT_SERVER_URL));
+    const supportUrl = await getSupportInviteUrl(interaction.client);
+    if (supportUrl) {
+      buttons.push(new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Shirox server').setURL(supportUrl));
     }
 
     const embed = new EmbedBuilder()

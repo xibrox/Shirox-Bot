@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { createPermanentInvite } = require('../lib/invites');
 
 module.exports = {
   category: 'utility',
@@ -15,15 +16,14 @@ module.exports = {
     }
 
     // Prefer the rules/system channel so new members land somewhere sensible
-    const me = guild.members.me;
-    const candidates = [guild.rulesChannel, guild.systemChannel, interaction.channel].filter(Boolean);
-    const channel = candidates.find(c => c.permissionsFor(me)?.has(PermissionFlagsBits.CreateInstantInvite));
-    if (!channel) {
-      return interaction.reply({ content: '❌ I need the **Create Invite** permission to make a link.', ephemeral: true });
+    const invite = await createPermanentInvite(guild, {
+      preferred: [guild.rulesChannel, guild.systemChannel, interaction.channel],
+      reason: `Requested by ${interaction.user.tag}`,
+    });
+    if (!invite) {
+      return interaction.reply({ content: '❌ I need the **Create Invite** permission to make a link.', flags: MessageFlags.Ephemeral });
     }
 
-    // unique: false reuses an existing identical permanent invite instead of making a new one each time
-    const invite = await channel.createInvite({ maxAge: 0, maxUses: 0, unique: false, reason: `Requested by ${interaction.user.tag}` });
     await interaction.reply(`🔗 **${guild.name}**: ${invite.url}`);
   },
 };

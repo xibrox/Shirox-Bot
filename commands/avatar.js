@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 
 // Builds the reply for /avatar, /pfp and the "Avatar" right-click app
@@ -9,7 +9,7 @@ async function buildAvatarReply(user, member, type = 'avatar') {
     const fetched = await user.fetch(true);
     url = fetched.bannerURL({ size: 1024 });
     label = 'banner';
-    if (!url) return { content: `❌ **${user.username}** has no banner.`, ephemeral: true };
+    if (!url) return { content: `❌ **${user.username}** has no banner.`, flags: MessageFlags.Ephemeral };
   } else if (type === 'server' && member?.avatar) {
     url = member.displayAvatarURL({ size: 1024 });
     label = 'server avatar';

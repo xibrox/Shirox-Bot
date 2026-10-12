@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getFaqs, findFaq, faqChoices } = require('../lib/faq');
 const { EMBED_COLOR } = require('../lib/colors');
 
@@ -31,17 +31,17 @@ module.exports = {
 
     if (interaction.options.getSubcommand() === 'list') {
       const faqs = getFaqs(guildId);
-      if (!faqs.length) return interaction.reply({ content: 'There are no FAQs yet. Staff can add some with `/faqmanage add`.', ephemeral: true });
+      if (!faqs.length) return interaction.reply({ content: 'There are no FAQs yet. Staff can add some with `/faqmanage add`.', flags: MessageFlags.Ephemeral });
       const embed = new EmbedBuilder()
         .setColor(EMBED_COLOR)
         .setTitle(`❓ FAQ: ${interaction.guild.name}`)
         .setDescription(faqs.map(f => `**${f.id}.** ${f.question}`).join('\n').slice(0, 4096))
         .setFooter({ text: 'Use /faq show to see an answer' });
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     const faq = findFaq(guildId, interaction.options.getString('question'));
-    if (!faq) return interaction.reply({ content: '❌ Pick a question from the list.', ephemeral: true });
+    if (!faq) return interaction.reply({ content: '❌ Pick a question from the list.', flags: MessageFlags.Ephemeral });
     const user = interaction.options.getUser('user');
     await interaction.reply({ content: user ? `${user}` : undefined, embeds: [faqEmbed(faq)] });
   },
@@ -53,7 +53,7 @@ module.exports = {
   // Dropdown on the panel posted by /faqmanage panel (customId "faq:select")
   async handleComponent(interaction) {
     const faq = findFaq(interaction.guild.id, interaction.values[0]);
-    if (!faq) return interaction.reply({ content: '❌ That question was removed.', ephemeral: true });
-    await interaction.reply({ embeds: [faqEmbed(faq)], ephemeral: true });
+    if (!faq) return interaction.reply({ content: '❌ That question was removed.', flags: MessageFlags.Ephemeral });
+    await interaction.reply({ embeds: [faqEmbed(faq)], flags: MessageFlags.Ephemeral });
   },
 };

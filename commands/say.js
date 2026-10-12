@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
   category: 'moderation',
@@ -24,10 +24,10 @@ module.exports = {
 
     try {
       await targetChannel.send(message);
-      await interaction.reply({ content: `✅ Message sent in ${targetChannel}`, ephemeral: true });
+      await interaction.reply({ content: `✅ Message sent in ${targetChannel}`, flags: MessageFlags.Ephemeral });
     } catch (err) {
       console.error('❌ Failed to send message:', err);
-      await interaction.reply({ content: '⚠️ Failed to send your message.', ephemeral: true });
+      await interaction.reply({ content: '⚠️ Failed to send your message.', flags: MessageFlags.Ephemeral });
     }
   },
 };

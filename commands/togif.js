@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { convertToGif, MAX_CLIP_SECONDS, DEFAULT_CLIP_SECONDS } = require('../lib/gif');
 
 async function replyWithGif(interaction, url, clip) {
@@ -33,9 +33,9 @@ module.exports = {
     const attachment = interaction.options.getAttachment('file');
     const url = attachment?.url || interaction.options.getString('url');
     if (!url) {
-      return interaction.reply({ content: '❌ Give me a file or a link. You can also right-click a message → **Apps → Convert to GIF**.', ephemeral: true });
+      return interaction.reply({ content: '❌ Give me a file or a link. You can also right-click a message → **Apps → Convert to GIF**.', flags: MessageFlags.Ephemeral });
     }
-    if (!/^https?:\/\//i.test(url)) return interaction.reply({ content: '❌ That is not a valid link.', ephemeral: true });
+    if (!/^https?:\/\//i.test(url)) return interaction.reply({ content: '❌ That is not a valid link.', flags: MessageFlags.Ephemeral });
 
     await replyWithGif(interaction, url, {
       start: interaction.options.getNumber('start') ?? 0,

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
   category: 'moderation',
@@ -14,14 +14,14 @@ module.exports = {
     const userId = interaction.options.getString('user_id').trim();
     const reason = interaction.options.getString('reason') || 'No reason provided';
     if (!/^\d{17,20}$/.test(userId)) {
-      return interaction.reply({ content: '❌ That is not a valid user ID.', ephemeral: true });
+      return interaction.reply({ content: '❌ That is not a valid user ID.', flags: MessageFlags.Ephemeral });
     }
 
     try {
       const user = await interaction.guild.members.unban(userId, `${interaction.user.tag}: ${reason}`);
       await interaction.reply(`✅ Unbanned **${user?.tag ?? userId}**.`);
     } catch {
-      await interaction.reply({ content: "❌ Couldn't unban that user. They may not be banned.", ephemeral: true });
+      await interaction.reply({ content: "❌ Couldn't unban that user. They may not be banned.", flags: MessageFlags.Ephemeral });
     }
   },
 };

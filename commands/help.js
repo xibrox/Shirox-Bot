@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ApplicationCommandType, ApplicationCommandOptionType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ApplicationCommandType, ApplicationCommandOptionType, MessageFlags } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 
 const CATEGORIES = {
@@ -119,7 +119,7 @@ module.exports = {
       return interaction.reply({ embeds: [overviewEmbed(interaction)], components: [categoryMenu(interaction)] });
     }
     if (!visibleCommands(interaction, category).length) {
-      return interaction.reply({ content: '❌ You do not have permission to use any commands in this category.', ephemeral: true });
+      return interaction.reply({ content: '❌ You do not have permission to use any commands in this category.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({ embeds: categoryEmbeds(interaction, category), components: [categoryMenu(interaction, category)] });
   },
@@ -130,7 +130,7 @@ module.exports = {
     const reply = { embeds: categoryEmbeds(interaction, category), components: [categoryMenu(interaction, category)] };
     // Only the person who ran /help changes the message; anyone else gets their own private copy
     const ownerId = interaction.message.interactionMetadata?.user?.id ?? interaction.message.interaction?.user?.id;
-    if (ownerId && ownerId !== interaction.user.id) return interaction.reply({ ...reply, ephemeral: true });
+    if (ownerId && ownerId !== interaction.user.id) return interaction.reply({ ...reply, flags: MessageFlags.Ephemeral });
     await interaction.update(reply);
   },
 };

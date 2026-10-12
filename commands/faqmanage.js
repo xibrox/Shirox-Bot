@@ -1,6 +1,7 @@
 const {
   SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType,
   ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder,
+  MessageFlags,
 } = require('discord.js');
 const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices } = require('../lib/faq');
 const { EMBED_COLOR } = require('../lib/colors');
@@ -49,15 +50,15 @@ module.exports = {
 
     if (sub === 'edit' || sub === 'remove') {
       const faq = findFaq(guildId, interaction.options.getString('question'));
-      if (!faq) return interaction.reply({ content: '❌ Pick a question from the list.', ephemeral: true });
+      if (!faq) return interaction.reply({ content: '❌ Pick a question from the list.', flags: MessageFlags.Ephemeral });
       if (sub === 'edit') return interaction.showModal(faqModal(`faqmanage:edit:${faq.id}`, 'Edit FAQ', faq));
       removeFaq(guildId, faq.id);
-      return interaction.reply({ content: `🗑️ Removed **${faq.question}**.\nRepost any FAQ panels to update their dropdown.`, ephemeral: true });
+      return interaction.reply({ content: `🗑️ Removed **${faq.question}**.\nRepost any FAQ panels to update their dropdown.`, flags: MessageFlags.Ephemeral });
     }
 
     // panel
     const faqs = getFaqs(guildId);
-    if (!faqs.length) return interaction.reply({ content: '❌ Add some FAQs first with `/faqmanage add`.', ephemeral: true });
+    if (!faqs.length) return interaction.reply({ content: '❌ Add some FAQs first with `/faqmanage add`.', flags: MessageFlags.Ephemeral });
     const channel = interaction.options.getChannel('channel') || interaction.channel;
 
     const embed = new EmbedBuilder()
@@ -72,9 +73,9 @@ module.exports = {
     try {
       await channel.send({ embeds: [embed], components: [new ActionRowBuilder().addComponents(menu)] });
       const note = faqs.length > 25 ? '\n⚠️ Only the first 25 questions fit in a dropdown.' : '';
-      await interaction.reply({ content: `✅ FAQ panel posted in ${channel}.${note}`, ephemeral: true });
+      await interaction.reply({ content: `✅ FAQ panel posted in ${channel}.${note}`, flags: MessageFlags.Ephemeral });
     } catch {
-      await interaction.reply({ content: `❌ I couldn't post in ${channel}.`, ephemeral: true });
+      await interaction.reply({ content: `❌ I couldn't post in ${channel}.`, flags: MessageFlags.Ephemeral });
     }
   },
 
@@ -91,10 +92,10 @@ module.exports = {
       const faq = updateFaq(interaction.guild.id, id, question, answer);
       return interaction.reply({
         content: faq ? `✅ Updated **${question}**.\nRepost any FAQ panels to update their dropdown.` : '❌ That FAQ no longer exists.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
     addFaq(interaction.guild.id, question, answer);
-    await interaction.reply({ content: `✅ Added **${question}**.`, ephemeral: true });
+    await interaction.reply({ content: `✅ Added **${question}**.`, flags: MessageFlags.Ephemeral });
   },
 };

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 const { checkAssignableRole } = require('../lib/moderation');
 
@@ -30,7 +30,7 @@ module.exports = {
 
     for (const role of roles) {
       const error = checkAssignableRole(interaction, role);
-      if (error) return interaction.reply({ content: error, ephemeral: true });
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
     }
 
     const embed = new EmbedBuilder()
@@ -53,9 +53,9 @@ module.exports = {
 
     try {
       await interaction.channel.send({ embeds: [embed], components: rows });
-      await interaction.reply({ content: '✅ Self-role panel posted.', ephemeral: true });
+      await interaction.reply({ content: '✅ Self-role panel posted.', flags: MessageFlags.Ephemeral });
     } catch {
-      await interaction.reply({ content: "❌ I couldn't post in this channel.", ephemeral: true });
+      await interaction.reply({ content: "❌ I couldn't post in this channel.", flags: MessageFlags.Ephemeral });
     }
   },
 
@@ -63,18 +63,18 @@ module.exports = {
   async handleComponent(interaction) {
     const roleId = interaction.customId.split(':')[1];
     const role = interaction.guild.roles.cache.get(roleId);
-    if (!role) return interaction.reply({ content: '❌ That role no longer exists.', ephemeral: true });
+    if (!role) return interaction.reply({ content: '❌ That role no longer exists.', flags: MessageFlags.Ephemeral });
     if (role.position >= interaction.guild.members.me.roles.highest.position || role.managed) {
-      return interaction.reply({ content: "❌ I can't manage that role anymore. Ask a staff member.", ephemeral: true });
+      return interaction.reply({ content: "❌ I can't manage that role anymore. Ask a staff member.", flags: MessageFlags.Ephemeral });
     }
 
     const member = interaction.member;
     if (member.roles.cache.has(roleId)) {
       await member.roles.remove(role, 'Self role');
-      await interaction.reply({ content: `➖ Removed ${role}.`, ephemeral: true });
+      await interaction.reply({ content: `➖ Removed ${role}.`, flags: MessageFlags.Ephemeral });
     } else {
       await member.roles.add(role, 'Self role');
-      await interaction.reply({ content: `➕ Added ${role}.`, ephemeral: true });
+      await interaction.reply({ content: `➕ Added ${role}.`, flags: MessageFlags.Ephemeral });
     }
   },
 };

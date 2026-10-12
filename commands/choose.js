@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     category: 'utility',
@@ -18,7 +18,7 @@ module.exports = {
         if (options.length < 2) {
             await interaction.reply({ 
                 content: "❗ Please give at least two options, separated by commas.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             return;
         }

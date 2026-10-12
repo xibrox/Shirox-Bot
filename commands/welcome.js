@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 const { PLACEHOLDERS } = require('../lib/greetings');
@@ -37,28 +37,28 @@ module.exports = {
       const message = interaction.options.getString('message');
       const perms = channel.permissionsFor(interaction.guild.members.me);
       if (!perms.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, ephemeral: true });
+        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, flags: MessageFlags.Ephemeral });
       }
 
       updateGuildConfig(interaction.guild.id, { welcomeChannelId: channel.id, welcomeMessage: message });
       return interaction.reply({
         content: `✅ Welcome messages will be sent in ${channel}.\nPlaceholders: ${PLACEHOLDERS}`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
     if (sub === 'disable') {
       updateGuildConfig(interaction.guild.id, { welcomeChannelId: null, welcomeMessage: null });
-      return interaction.reply({ content: '✅ Welcome messages disabled.', ephemeral: true });
+      return interaction.reply({ content: '✅ Welcome messages disabled.', flags: MessageFlags.Ephemeral });
     }
 
     const config = getGuildConfig(interaction.guild.id);
     if (!config.welcomeChannelId) {
-      return interaction.reply({ content: 'Welcome messages are *disabled*.', ephemeral: true });
+      return interaction.reply({ content: 'Welcome messages are *disabled*.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({
       content: `📢 Channel: <#${config.welcomeChannelId}>\n💬 Message: ${config.welcomeMessage || '*default*'}`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

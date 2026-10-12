@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { checkAssignableRole } = require('../lib/moderation');
 
@@ -31,22 +31,22 @@ module.exports = {
     if (sub === 'set') {
       const role = interaction.options.getRole('role');
       const error = checkAssignableRole(interaction, role);
-      if (error) return interaction.reply({ content: error, ephemeral: true });
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
       updateGuildConfig(interaction.guild.id, { [key]: role.id });
-      return interaction.reply({ content: `✅ ${role} will now be given to ${label}.`, ephemeral: true });
+      return interaction.reply({ content: `✅ ${role} will now be given to ${label}.`, flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'disable') {
       updateGuildConfig(interaction.guild.id, { [key]: null });
-      return interaction.reply({ content: `✅ Auto role for ${label} disabled.`, ephemeral: true });
+      return interaction.reply({ content: `✅ Auto role for ${label} disabled.`, flags: MessageFlags.Ephemeral });
     }
 
     const config = getGuildConfig(interaction.guild.id);
     const show = id => (id ? `<@&${id}>` : '*not set*');
     await interaction.reply({
       content: `👤 Members: ${show(config.autoRoleId)}\n🤖 Bots: ${show(config.botAutoRoleId)}`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

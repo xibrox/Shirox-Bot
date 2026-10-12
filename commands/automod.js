@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 module.exports = {
@@ -51,24 +51,24 @@ module.exports = {
       const enabled = interaction.options.getBoolean('enabled');
       const key = { invites: 'automodInvites', links: 'automodLinks', spam: 'automodSpam' }[sub];
       updateGuildConfig(guildId, { [key]: enabled || null });
-      return interaction.reply({ content: `🛡️ ${sub} filter: ${onOff(enabled)}`, ephemeral: true });
+      return interaction.reply({ content: `🛡️ ${sub} filter: ${onOff(enabled)}`, flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'mentions') {
       const limit = interaction.options.getInteger('limit');
       updateGuildConfig(guildId, { automodMentionLimit: limit || null });
-      return interaction.reply({ content: limit ? `🛡️ Max mentions per message: **${limit}**` : '🛡️ Mention filter: ❌ off', ephemeral: true });
+      return interaction.reply({ content: limit ? `🛡️ Max mentions per message: **${limit}**` : '🛡️ Mention filter: ❌ off', flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'new_accounts') {
       const days = interaction.options.getInteger('days');
       if (days && !interaction.guild.members.me.permissions.has(PermissionFlagsBits.KickMembers)) {
-        return interaction.reply({ content: '❌ I need the **Kick Members** permission for this.', ephemeral: true });
+        return interaction.reply({ content: '❌ I need the **Kick Members** permission for this.', flags: MessageFlags.Ephemeral });
       }
       updateGuildConfig(guildId, { automodMinAccountAgeDays: days || null });
       return interaction.reply({
         content: days ? `🛡️ Accounts younger than **${days} day(s)** will be kicked on join.` : '🛡️ New account filter: ❌ off',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -81,7 +81,7 @@ module.exports = {
         `💬 Spam: ${onOff(c.automodSpam)}`,
         `🆕 Min account age: ${c.automodMinAccountAgeDays ? `**${c.automodMinAccountAgeDays} day(s)**` : '❌ off'}`,
       ].join('\n'),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

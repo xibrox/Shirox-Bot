@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { addWarning } = require('../lib/warnings');
 const { createLogEmbed, sendLog, userField } = require('../lib/logger');
 
@@ -15,8 +15,8 @@ module.exports = {
   async execute(interaction) {
     const user = interaction.options.getUser('user');
     const reason = interaction.options.getString('reason');
-    if (user.bot) return interaction.reply({ content: "❌ You can't warn bots.", ephemeral: true });
-    if (user.id === interaction.user.id) return interaction.reply({ content: "❌ You can't warn yourself.", ephemeral: true });
+    if (user.bot) return interaction.reply({ content: "❌ You can't warn bots.", flags: MessageFlags.Ephemeral });
+    if (user.id === interaction.user.id) return interaction.reply({ content: "❌ You can't warn yourself.", flags: MessageFlags.Ephemeral });
 
     const warnings = addWarning(interaction.guild.id, user.id, reason, interaction.user.id);
     const dmSent = await user.send(`⚠️ You were warned in **${interaction.guild.name}**. Reason: ${reason}`)

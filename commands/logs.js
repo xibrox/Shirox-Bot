@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 module.exports = {
@@ -30,25 +30,25 @@ module.exports = {
       const channel = interaction.options.getChannel('channel');
       const me = interaction.guild.members.me;
       if (!channel.permissionsFor(me).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, ephemeral: true });
+        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, flags: MessageFlags.Ephemeral });
       }
 
       updateGuildConfig(interaction.guild.id, { logChannelId: channel.id });
       const auditNote = me.permissions.has(PermissionFlagsBits.ViewAuditLog)
         ? ''
         : '\n⚠️ Give me **View Audit Log** so logs can show who banned/kicked/timed out someone.';
-      return interaction.reply({ content: `✅ Logs will be sent to ${channel}.${auditNote}`, ephemeral: true });
+      return interaction.reply({ content: `✅ Logs will be sent to ${channel}.${auditNote}`, flags: MessageFlags.Ephemeral });
     }
 
     if (sub === 'disable') {
       updateGuildConfig(interaction.guild.id, { logChannelId: null });
-      return interaction.reply({ content: '✅ Logging disabled.', ephemeral: true });
+      return interaction.reply({ content: '✅ Logging disabled.', flags: MessageFlags.Ephemeral });
     }
 
     const { logChannelId } = getGuildConfig(interaction.guild.id);
     await interaction.reply({
       content: logChannelId ? `📜 Logs are sent to <#${logChannelId}>.` : 'Logging is *disabled*.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

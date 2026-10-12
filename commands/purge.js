@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 const FILTERS = {
   bots: m => m.author.bot,
@@ -62,7 +62,7 @@ module.exports = {
     const skip = interaction.options.getInteger('skip') ?? 0;
     const filtering = user || filter;
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
       let toDelete;

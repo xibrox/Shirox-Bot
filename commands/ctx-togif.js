@@ -1,4 +1,4 @@
-const { ContextMenuCommandBuilder, ApplicationCommandType } = require('discord.js');
+const { ContextMenuCommandBuilder, ApplicationCommandType, MessageFlags } = require('discord.js');
 const { findMediaUrl } = require('../lib/gif');
 const { replyWithGif } = require('./togif');
 
@@ -11,7 +11,7 @@ module.exports = {
 
   async execute(interaction) {
     const url = findMediaUrl(interaction.targetMessage);
-    if (!url) return interaction.reply({ content: '❌ That message has no image or video.', ephemeral: true });
+    if (!url) return interaction.reply({ content: '❌ That message has no image or video.', flags: MessageFlags.Ephemeral });
     await replyWithGif(interaction, url);
   },
 };

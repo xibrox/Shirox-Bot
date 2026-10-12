@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
   category: 'moderation',
@@ -18,7 +18,7 @@ module.exports = {
     const channel = interaction.channel;
 
     if (!channel.permissionOverwrites) {
-      return interaction.reply({ content: "❌ This channel can't be locked.", ephemeral: true });
+      return interaction.reply({ content: "❌ This channel can't be locked.", flags: MessageFlags.Ephemeral });
     }
 
     try {
@@ -32,7 +32,7 @@ module.exports = {
         unlock ? '🔓 Channel unlocked.' : `🔒 Channel locked.${reason ? ` Reason: ${reason}` : ''}`,
       );
     } catch {
-      await interaction.reply({ content: "❌ I couldn't update this channel. Do I have **Manage Channels**?", ephemeral: true });
+      await interaction.reply({ content: "❌ I couldn't update this channel. Do I have **Manage Channels**?", flags: MessageFlags.Ephemeral });
     }
   },
 };

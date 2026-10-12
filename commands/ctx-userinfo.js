@@ -1,4 +1,4 @@
-const { ContextMenuCommandBuilder, ApplicationCommandType } = require('discord.js');
+const { ContextMenuCommandBuilder, ApplicationCommandType, MessageFlags } = require('discord.js');
 const { buildUserInfoEmbed } = require('./userinfo');
 
 module.exports = {
@@ -11,6 +11,6 @@ module.exports = {
 
   async execute(interaction) {
     const embed = await buildUserInfoEmbed(interaction, interaction.targetUser, interaction.targetMember);
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

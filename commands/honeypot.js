@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } = require('discord.js');
 const { COLORS } = require('../lib/colors');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
@@ -52,10 +52,10 @@ module.exports = {
 
       const needed = action === 'kick' ? PermissionFlagsBits.KickMembers : PermissionFlagsBits.BanMembers;
       if (!me.permissions.has(needed)) {
-        return interaction.reply({ content: `❌ I need the **${action === 'kick' ? 'Kick' : 'Ban'} Members** permission for this.`, ephemeral: true });
+        return interaction.reply({ content: `❌ I need the **${action === 'kick' ? 'Kick' : 'Ban'} Members** permission for this.`, flags: MessageFlags.Ephemeral });
       }
       if (!channel.permissionsFor(me).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageMessages])) {
-        return interaction.reply({ content: `❌ I need View Channel and Manage Messages in ${channel}.`, ephemeral: true });
+        return interaction.reply({ content: `❌ I need View Channel and Manage Messages in ${channel}.`, flags: MessageFlags.Ephemeral });
       }
 
       updateGuildConfig(interaction.guild.id, { honeypotChannelId: channel.id, honeypotAction: action });
@@ -74,13 +74,13 @@ module.exports = {
       return interaction.reply({
         content: `🍯 Honeypot active in ${channel}.\nAction: **${ACTION_LABELS[action]}**\nStaff with **Manage Messages** are ignored.\n` +
           `💡 Tip: put the channel near the top of the channel list — spam bots usually post in the first channels they can see.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
     if (sub === 'disable') {
       updateGuildConfig(interaction.guild.id, { honeypotChannelId: null, honeypotAction: null });
-      return interaction.reply({ content: '✅ Honeypot disabled.', ephemeral: true });
+      return interaction.reply({ content: '✅ Honeypot disabled.', flags: MessageFlags.Ephemeral });
     }
 
     const config = getGuildConfig(interaction.guild.id);
@@ -88,7 +88,7 @@ module.exports = {
       content: config.honeypotChannelId
         ? `🍯 Channel: <#${config.honeypotChannelId}>\nAction: **${ACTION_LABELS[config.honeypotAction || 'softban']}**`
         : 'The honeypot is *disabled*.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

@@ -1,6 +1,7 @@
 const {
   SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder,
   ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
+  MessageFlags,
 } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 
@@ -72,7 +73,7 @@ module.exports = {
     if (interaction.options.getSubcommand() === 'create') {
       const channel = interaction.options.getChannel('channel') || interaction.channel;
       if (!interaction.member.permissionsIn(channel).has(PermissionFlagsBits.SendMessages)) {
-        return interaction.reply({ content: `❌ You can't send messages in ${channel}.`, ephemeral: true });
+        return interaction.reply({ content: `❌ You can't send messages in ${channel}.`, flags: MessageFlags.Ephemeral });
       }
       return interaction.showModal(buildModal(`embed:create:${channel.id}`, 'Create embed'));
     }
@@ -82,9 +83,9 @@ module.exports = {
     const channel = interaction.guild.channels.cache.get(channelId);
     const message = await channel?.messages?.fetch(messageId).catch(() => null);
 
-    if (!message) return interaction.reply({ content: "❌ I couldn't find that message.", ephemeral: true });
+    if (!message) return interaction.reply({ content: "❌ I couldn't find that message.", flags: MessageFlags.Ephemeral });
     if (message.author.id !== interaction.client.user.id || !message.embeds.length) {
-      return interaction.reply({ content: '❌ I can only edit embeds that I posted.', ephemeral: true });
+      return interaction.reply({ content: '❌ I can only edit embeds that I posted.', flags: MessageFlags.Ephemeral });
     }
     await interaction.showModal(buildModal(`embed:edit:${channel.id}:${message.id}`, 'Edit embed', message.embeds[0]));
   },
@@ -92,19 +93,19 @@ module.exports = {
   async handleModal(interaction) {
     const [, action, channelId, messageId] = interaction.customId.split(':');
     const { embed, error } = embedFromModal(interaction);
-    if (error) return interaction.reply({ content: error, ephemeral: true });
+    if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
     const channel = interaction.guild.channels.cache.get(channelId);
     try {
       if (action === 'edit') {
         const message = await channel.messages.fetch(messageId);
         await message.edit({ embeds: [embed] });
-        return interaction.reply({ content: `✅ [Embed updated](${message.url}).`, ephemeral: true });
+        return interaction.reply({ content: `✅ [Embed updated](${message.url}).`, flags: MessageFlags.Ephemeral });
       }
       const message = await channel.send({ embeds: [embed] });
-      await interaction.reply({ content: `✅ [Embed posted](${message.url}) in ${channel}.`, ephemeral: true });
+      await interaction.reply({ content: `✅ [Embed posted](${message.url}) in ${channel}.`, flags: MessageFlags.Ephemeral });
     } catch {
-      await interaction.reply({ content: `❌ I couldn't post in ${channel}. Check my permissions there.`, ephemeral: true });
+      await interaction.reply({ content: `❌ I couldn't post in ${channel}. Check my permissions there.`, flags: MessageFlags.Ephemeral });
     }
   },
 };

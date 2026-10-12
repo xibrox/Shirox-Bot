@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { checkHierarchy, softban } = require('../lib/moderation');
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require('../lib/logger');
 
@@ -24,11 +24,11 @@ module.exports = {
     const target = interaction.options.getMember('user');
     const reason = interaction.options.getString('reason') || 'No reason provided';
     const deleteMessageSeconds = interaction.options.getInteger('delete_messages') ?? 86_400;
-    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', ephemeral: true });
+    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', flags: MessageFlags.Ephemeral });
 
     const error = checkHierarchy(interaction, target);
-    if (error) return interaction.reply({ content: error, ephemeral: true });
-    if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", ephemeral: true });
+    if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
+    if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", flags: MessageFlags.Ephemeral });
 
     await target.send(
       `🧹 You were soft banned from **${interaction.guild.name}** (removed and recent messages deleted). You can rejoin. Reason: ${reason}`,
@@ -39,7 +39,7 @@ module.exports = {
       await softban(interaction.guild, target.id, `${interaction.user.tag}: ${reason}`, deleteMessageSeconds);
     } catch (err) {
       console.error('❌ Soft ban failed:', err);
-      return interaction.reply({ content: '❌ Soft ban failed. Do I have **Ban Members**?', ephemeral: true });
+      return interaction.reply({ content: '❌ Soft ban failed. Do I have **Ban Members**?', flags: MessageFlags.Ephemeral });
     }
 
     await interaction.reply(`🧹 Soft banned **${target.user.tag}**. Reason: ${reason}`);

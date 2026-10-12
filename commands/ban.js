@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { checkHierarchy } = require('../lib/moderation');
 
 module.exports = {
@@ -29,8 +29,8 @@ module.exports = {
     // Users who aren't in the server can still be banned (hackban)
     if (target) {
       const error = checkHierarchy(interaction, target);
-      if (error) return interaction.reply({ content: error, ephemeral: true });
-      if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", ephemeral: true });
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
+      if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", flags: MessageFlags.Ephemeral });
       await target.send(`🔨 You were banned from **${interaction.guild.name}**. Reason: ${reason}`).catch(() => {});
     }
 
@@ -39,7 +39,7 @@ module.exports = {
       await interaction.reply(`🔨 Banned **${user.tag}**. Reason: ${reason}`);
     } catch (err) {
       console.error('❌ Ban failed:', err);
-      await interaction.reply({ content: '❌ Failed to ban that user. Do I have **Ban Members**?', ephemeral: true });
+      await interaction.reply({ content: '❌ Failed to ban that user. Do I have **Ban Members**?', flags: MessageFlags.Ephemeral });
     }
   },
 };

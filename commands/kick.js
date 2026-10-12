@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { checkHierarchy } = require('../lib/moderation');
 
 module.exports = {
@@ -14,11 +14,11 @@ module.exports = {
   async execute(interaction) {
     const target = interaction.options.getMember('user');
     const reason = interaction.options.getString('reason') || 'No reason provided';
-    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', ephemeral: true });
+    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', flags: MessageFlags.Ephemeral });
 
     const error = checkHierarchy(interaction, target);
-    if (error) return interaction.reply({ content: error, ephemeral: true });
-    if (!target.kickable) return interaction.reply({ content: "❌ I can't kick that member.", ephemeral: true });
+    if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
+    if (!target.kickable) return interaction.reply({ content: "❌ I can't kick that member.", flags: MessageFlags.Ephemeral });
 
     await target.send(`👢 You were kicked from **${interaction.guild.name}**. Reason: ${reason}`).catch(() => {});
     await target.kick(`${interaction.user.tag}: ${reason}`);

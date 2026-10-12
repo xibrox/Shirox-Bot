@@ -9,9 +9,11 @@ const {
     GatewayIntentBits,
     EmbedBuilder,
     Partials,
+    MessageFlags,
 } = require("discord.js");
 const { EMBED_COLOR } = require("./lib/colors");
 const { getGuildConfig } = require("./lib/guildConfig");
+const { isOwner } = require("./lib/owner");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,8 +66,10 @@ for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"
 // Buttons, dropdowns and forms use customIds like "<command>:<data>" and are routed back to that command
 const COMPONENT_ALIASES = { selfrole: "selfroles" };
 
+const OWNER_ONLY_REPLY = { content: "🔒 Only the bot owner can use this.", flags: MessageFlags.Ephemeral };
+
 async function replyWithError(interaction) {
-    const errorMsg = { content: "There was an error executing this command!", ephemeral: true };
+    const errorMsg = { content: "There was an error executing this command!", flags: MessageFlags.Ephemeral };
     if (interaction.replied || interaction.deferred) await interaction.followUp(errorMsg).catch(() => {});
     else await interaction.reply(errorMsg).catch(() => {});
 }
@@ -74,12 +78,14 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         if (interaction.isAutocomplete()) {
             const command = client.commands.get(interaction.commandName);
+            if (command?.ownerOnly && !isOwner(interaction.user.id)) return await interaction.respond([]);
             return await command?.autocomplete?.(interaction);
         }
 
         if (interaction.isMessageComponent() || interaction.isModalSubmit()) {
             const prefix = interaction.customId.split(":")[0];
             const command = client.commands.get(COMPONENT_ALIASES[prefix] ?? prefix);
+            if (command?.ownerOnly && !isOwner(interaction.user.id)) return await interaction.reply(OWNER_ONLY_REPLY);
             const handler = interaction.isModalSubmit() ? command?.handleModal : command?.handleComponent;
             if (handler) await handler.call(command, interaction);
             return;
@@ -87,7 +93,19 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return;
         const command = client.commands.get(interaction.commandName);
-        if (!command) return console.error(`No command found: ${interaction.commandName}`);
+        if (!command) {
+            // Commands were deployed but this running copy of the bot doesn't have the file (restart/update it)
+            console.error(`No command found: ${interaction.commandName}`);
+            return await interaction.reply({ content: "⚠️ This command isn't loaded yet. The bot needs to be updated and restarted.", flags: MessageFlags.Ephemeral });
+        }
+        if (command.ownerOnly && !isOwner(interaction.user.id)) return await interaction.reply(OWNER_ONLY_REPLY);
+        // guildId without a cached guild means the bot user isn't in this server (only the app's commands were added)
+        if (command.data.dm_permission === false && interaction.guildId && !interaction.guild) {
+            return await interaction.reply({
+                content: "❌ I'm not actually in this server, only my commands are. Re-invite me with `/invite` so I can work here.",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
         await command.execute(interaction);
     } catch (error) {
         console.error(`Interaction error (${interaction.commandName ?? interaction.customId}):`, error);
@@ -111,7 +129,7 @@ const clannadQuotes = [
 ];
 
 // ===== Ready Event =====
-client.once("ready", async () => {
+client.once(Events.ClientReady, async () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     client.user.setActivity("/help");
 

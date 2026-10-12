@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 const { COLORS } = require('../lib/colors');
 const { getWarnings, removeWarning, clearWarnings } = require('../lib/warnings');
 
@@ -33,18 +33,18 @@ module.exports = {
       const removed = removeWarning(guildId, user.id, id);
       return interaction.reply({
         content: removed ? `✅ Removed warning #${id} from **${user.tag}**.` : `❌ **${user.tag}** has no warning #${id}.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
     if (sub === 'clear') {
       const count = clearWarnings(guildId, user.id);
-      return interaction.reply({ content: `✅ Cleared **${count}** warning(s) from **${user.tag}**.`, ephemeral: true });
+      return interaction.reply({ content: `✅ Cleared **${count}** warning(s) from **${user.tag}**.`, flags: MessageFlags.Ephemeral });
     }
 
     const warnings = getWarnings(guildId, user.id);
     if (warnings.length === 0) {
-      return interaction.reply({ content: `✅ **${user.tag}** has no warnings.`, ephemeral: true });
+      return interaction.reply({ content: `✅ **${user.tag}** has no warnings.`, flags: MessageFlags.Ephemeral });
     }
 
     const embed = new EmbedBuilder()
@@ -56,6 +56,6 @@ module.exports = {
       ).join('\n\n'));
     if (warnings.length > 15) embed.setFooter({ text: `Showing the latest 15 of ${warnings.length}` });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

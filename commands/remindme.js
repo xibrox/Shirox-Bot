@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { parseDuration, formatDuration } = require('../lib/duration');
 
 module.exports = {
@@ -22,7 +22,7 @@ module.exports = {
     if (!ms) {
       return interaction.reply({
         content: "⏰ Usage example: `/remindme 10m check the oven`",
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
