@@ -68,13 +68,19 @@ module.exports = {
       return interaction.reply({ content: "❌ I can't manage that role anymore. Ask a staff member.", flags: MessageFlags.Ephemeral });
     }
 
+    // Role changes can take longer than Discord's 3 second reply window, so answer first
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const member = interaction.member;
-    if (member.roles.cache.has(roleId)) {
-      await member.roles.remove(role, 'Self role');
-      await interaction.reply({ content: `➖ Removed ${role}.`, flags: MessageFlags.Ephemeral });
-    } else {
-      await member.roles.add(role, 'Self role');
-      await interaction.reply({ content: `➕ Added ${role}.`, flags: MessageFlags.Ephemeral });
+    try {
+      if (member.roles.cache.has(roleId)) {
+        await member.roles.remove(role, 'Self role');
+        await interaction.editReply(`➖ Removed ${role}.`);
+      } else {
+        await member.roles.add(role, 'Self role');
+        await interaction.editReply(`➕ Added ${role}.`);
+      }
+    } catch {
+      await interaction.editReply(`❌ I couldn't change ${role}. Ask a staff member.`);
     }
   },
 };
