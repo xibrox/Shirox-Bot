@@ -6,6 +6,16 @@ const {
 const { EMBED_COLOR } = require('../lib/colors');
 
 const MESSAGE_LINK = /channels\/\d+\/(\d+)\/(\d+)/;
+// Discord only renders # headings in the description, so heading titles live there as the first line
+const HEADING = /^#{1,3} \S/;
+
+// Pulls a heading title back out of the description so the edit form shows it in the Title field
+function splitHeading(embed) {
+  if (!embed || embed.title) return { title: embed?.title, description: embed?.description };
+  const [first, ...rest] = (embed.description || '').split('\n');
+  if (!HEADING.test(first)) return { title: undefined, description: embed.description };
+  return { title: first, description: rest.join('\n').trim() };
+}
 
 function buildModal(customId, title, existing) {
   const field = (id, label, style, { value, required = false, max, placeholder } = {}) => {
@@ -16,13 +26,14 @@ function buildModal(customId, title, existing) {
     return new ActionRowBuilder().addComponents(input);
   };
   const color = existing?.hexColor;
+  const current = splitHeading(existing);
 
   return new ModalBuilder()
     .setCustomId(customId)
     .setTitle(title)
     .addComponents(
-      field('title', 'Title', TextInputStyle.Short, { value: existing?.title, max: 256 }),
-      field('description', 'Description', TextInputStyle.Paragraph, { value: existing?.description, required: true, max: 4000 }),
+      field('title', 'Title', TextInputStyle.Short, { value: current.title, max: 256, placeholder: 'Start with # / ## / ### for a big heading' }),
+      field('description', 'Description', TextInputStyle.Paragraph, { value: current.description, required: true, max: 4000 }),
       field('color', 'Color (hex)', TextInputStyle.Short, { value: color, max: 7, placeholder: '#FFFFFF' }),
       field('image', 'Image URL', TextInputStyle.Short, { value: existing?.image?.url, placeholder: 'https://...' }),
       field('footer', 'Footer', TextInputStyle.Short, { value: existing?.footer?.text, max: 2048 }),
@@ -34,14 +45,18 @@ function embedFromModal(interaction) {
   const get = id => interaction.fields.getTextInputValue(id).trim();
   const color = get('color') || EMBED_COLOR;
   const image = get('image');
+  const title = get('title');
+  const heading = HEADING.test(title);
+  const description = heading ? `${title}\n${get('description')}` : get('description');
 
   if (!/^#?[0-9a-f]{6}$/i.test(color)) return { error: '❌ Color must be a hex code like `#FFFFFF`.' };
   if (image && !/^https?:\/\/\S+$/i.test(image)) return { error: '❌ Image must be a link starting with `https://`.' };
+  if (description.length > 4096) return { error: '❌ Heading title plus description is too long (max 4096 characters).' };
 
   const embed = new EmbedBuilder()
     .setColor(color.startsWith('#') ? color : `#${color}`)
-    .setDescription(get('description'));
-  if (get('title')) embed.setTitle(get('title'));
+    .setDescription(description);
+  if (title && !heading) embed.setTitle(title);
   if (image) embed.setImage(image);
   if (get('footer')) embed.setFooter({ text: get('footer') });
   return { embed };
