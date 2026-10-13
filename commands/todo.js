@@ -1,7 +1,8 @@
 const {
   SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags,
-  ModalBuilder, LabelBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder,
+  ModalBuilder, LabelBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, InteractionContextType,
 } = require('discord.js');
+const { asOwnerCommand } = require('../lib/owner');
 const { updateGuildConfig } = require('../lib/guildConfig');
 const {
   TYPES, guessType, splitText, readSource, postTodo, readCard, setType, setStatus, cardComponents,
@@ -39,9 +40,10 @@ async function openMessageModal(interaction, message) {
 const posted = message => `✅ Added to todo: [${message.embeds[0].author.name}](${message.url})`;
 
 module.exports = {
-  category: 'moderation',
+  category: 'owner',
+  ownerOnly: true,
   openMessageModal,
-  data: new SlashCommandBuilder()
+  data: asOwnerCommand(new SlashCommandBuilder()
     .setName('todo')
     .setDescription('Track bugs, problems and suggestions in a todo channel')
     .addSubcommand(sub =>
@@ -59,8 +61,8 @@ module.exports = {
             .setDescription('Channel for todo items')
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .setDMPermission(false),
+    .setDMPermission(false))
+    .setContexts(InteractionContextType.Guild),
 
   async execute(interaction) {
     if (interaction.options.getSubcommand() === 'channel') {
@@ -77,7 +79,7 @@ module.exports = {
       updateGuildConfig(interaction.guild.id, { todoChannelId: channel.id });
       return interaction.reply({
         content: `✅ Todo channel set to ${channel}.\n`
-          + 'Anything staff post or forward there turns into a todo card. Start with `bug:`, `suggestion:`, `problem:` or `task:` to pick the type, '
+          + 'Anything you post or forward there turns into a todo card. Start with `bug:`, `suggestion:`, `problem:` or `task:` to pick the type, '
           + 'or start with `//` to leave a normal message.',
         flags: MessageFlags.Ephemeral,
       });
@@ -99,11 +101,8 @@ module.exports = {
     }
   },
 
-  // Buttons and type dropdown on a todo card
+  // Buttons and type dropdown on a todo card (owner only, checked in index.js)
   async handleComponent(interaction) {
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-      return interaction.reply({ content: '❌ Only staff with Manage Server can update todo items.', flags: MessageFlags.Ephemeral });
-    }
     const [, action, value] = interaction.customId.split(':');
     const embed = EmbedBuilder.from(interaction.message.embeds[0]);
     const card = readCard(interaction.message.embeds[0]);

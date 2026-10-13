@@ -1,13 +1,14 @@
-const { ContextMenuCommandBuilder, ApplicationCommandType, PermissionFlagsBits, InteractionContextType } = require('discord.js');
+const { ContextMenuCommandBuilder, ApplicationCommandType, InteractionContextType } = require('discord.js');
+const { asOwnerCommand } = require('../lib/owner');
 const { openMessageModal } = require('./todo');
 
 module.exports = {
-  category: 'apps',
+  category: 'owner',
+  ownerOnly: true,
   description: 'Turn a message (a bug report, suggestion, ...) into a card in the todo channel',
-  data: new ContextMenuCommandBuilder()
+  data: asOwnerCommand(new ContextMenuCommandBuilder()
     .setName('Add to todo')
-    .setType(ApplicationCommandType.Message)
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .setType(ApplicationCommandType.Message))
     .setContexts(InteractionContextType.Guild),
 
   async execute(interaction) {

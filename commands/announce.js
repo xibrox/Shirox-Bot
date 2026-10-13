@@ -1,9 +1,10 @@
 const {
   SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags,
   ActionRowBuilder, ButtonBuilder, ButtonStyle, RoleSelectMenuBuilder,
-  ModalBuilder, TextInputBuilder, TextInputStyle,
+  ModalBuilder, TextInputBuilder, TextInputStyle, InteractionContextType,
 } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
+const { asOwnerCommand } = require('../lib/owner');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { fetchNewCommits, findBuildCommit, writeChangelog } = require('../lib/changelog');
 const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
@@ -89,8 +90,9 @@ function editModal(id, draft) {
 }
 
 module.exports = {
-  category: 'moderation',
-  data: new SlashCommandBuilder()
+  category: 'owner',
+  ownerOnly: true,
+  data: asOwnerCommand(new SlashCommandBuilder()
     .setName('announce')
     .setDescription('Post an update announcement made from new GitHub commits')
     .addSubcommand(sub =>
@@ -110,8 +112,8 @@ module.exports = {
         .addStringOption(option =>
           option.setName('repo')
             .setDescription(`GitHub repo as owner/name or a link (default ${DEFAULT_REPO})`)))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .setDMPermission(false),
+    .setDMPermission(false))
+    .setContexts(InteractionContextType.Guild),
 
   async execute(interaction) {
     const config = getGuildConfig(interaction.guild.id);

@@ -1,16 +1,17 @@
-const { Events, PermissionFlagsBits } = require("discord.js");
+const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
 const { suppressLogsFor } = require("../lib/logger");
+const { isOwner } = require("../lib/owner");
 const { guessType, stripTypePrefix, splitText, readSource, postTodo } = require("../lib/todo");
 
-// Staff messages and forwards in the todo channel are replaced with a todo card.
+// The owner's messages and forwards in the todo channel are replaced with a todo card.
 // Messages starting with "//" are left alone so you can still chat there.
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
         if (!message.inGuild() || message.author.bot) return;
         if (message.channelId !== getGuildConfig(message.guild.id).todoChannelId) return;
-        if (!message.member?.permissions.has(PermissionFlagsBits.ManageGuild)) return;
+        if (!isOwner(message.author.id)) return;
         if (message.content.startsWith("//")) return;
 
         const source = await readSource(message);
@@ -23,7 +24,7 @@ module.exports = {
             type: type ?? guessType(text),
             title,
             details,
-            // When staff type it themselves, they're the one adding it, not a reporter
+            // When the owner types it themselves, they're the one adding it, not a reporter
             reporter: forwarded ? source.reporter : null,
             sourceUrl: forwarded ? source.sourceUrl : null,
             attachments: source.attachments,
