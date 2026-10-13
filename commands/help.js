@@ -4,7 +4,7 @@ const { EMBED_COLOR } = require('../lib/colors');
 const CATEGORIES = {
   fun: { title: '🎮 Fun', blurb: 'Games and random stuff' },
   utility: { title: '🛠️ Utility', blurb: 'Info, tools, FAQ and GIFs' },
-  moderation: { title: '🛡️ Moderation', blurb: 'Purge, bans, timeouts, warnings, embeds' },
+  moderation: { title: '🛡️ Moderation', blurb: 'Purge, bans, warnings, embeds, todos, announcements' },
   setup: { title: '⚙️ Setup', blurb: 'Logs, honeypot, automod, welcome & more' },
   apps: { title: '🖱️ Right-click Apps', blurb: 'Right-click a user or message → Apps' },
 };

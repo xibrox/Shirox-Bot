@@ -1,6 +1,6 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
-const { sendGreeting } = require("../lib/greetings");
+const { DEFAULT_GOODBYE, sendGreeting } = require("../lib/greetings");
 const { saveMemberRoles } = require("../lib/savedRoles");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField, isSuppressed } = require("../lib/logger");
 
@@ -16,7 +16,7 @@ module.exports = {
         const config = getGuildConfig(member.guild.id);
         if (config.restoreRoles && !member.partial) saveMemberRoles(member);
         if (config.goodbyeChannelId) {
-            const template = config.goodbyeMessage || "**{username}** has left **{server}**. We now have {count} members. 👋";
+            const template = config.goodbyeMessage || DEFAULT_GOODBYE;
             await sendGreeting(member, config.goodbyeChannelId, template, false);
         }
 

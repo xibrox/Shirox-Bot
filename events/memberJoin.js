@@ -1,6 +1,6 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
-const { sendGreeting } = require("../lib/greetings");
+const { DEFAULT_WELCOME, sendGreeting } = require("../lib/greetings");
 const { restoreMemberRoles } = require("../lib/savedRoles");
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require("../lib/logger");
 
@@ -56,7 +56,7 @@ async function giveAutoRole(member, config) {
 
 async function sendWelcome(member, config) {
     if (!config.welcomeChannelId) return;
-    const template = config.welcomeMessage || "Welcome to **{server}**, {user}! 🎉";
+    const template = config.welcomeMessage || DEFAULT_WELCOME;
     await sendGreeting(member, config.welcomeChannelId, template, true);
 }
 

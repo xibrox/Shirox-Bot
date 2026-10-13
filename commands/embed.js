@@ -4,6 +4,7 @@ const {
   MessageFlags,
 } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
+const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
 
 const MESSAGE_LINK = /channels\/\d+\/(\d+)\/(\d+)/;
 // Discord only renders # headings in the description, so heading titles live there as the first line
@@ -17,6 +18,7 @@ function splitHeading(embed) {
   return { title: first, description: rest.join('\n').trim() };
 }
 
+// `existing` is raw embed data (embed.data / embed.toJSON())
 function buildModal(customId, title, existing) {
   const field = (id, label, style, { value, required = false, max, placeholder } = {}) => {
     const input = new TextInputBuilder().setCustomId(id).setLabel(label).setStyle(style).setRequired(required);
@@ -25,7 +27,7 @@ function buildModal(customId, title, existing) {
     if (value) input.setValue(value);
     return new ActionRowBuilder().addComponents(input);
   };
-  const color = existing?.hexColor;
+  const color = existing?.color !== undefined ? `#${existing.color.toString(16).padStart(6, '0').toUpperCase()}` : undefined;
   const current = splitHeading(existing);
 
   return new ModalBuilder()
@@ -60,6 +62,17 @@ function embedFromModal(interaction) {
   if (image) embed.setImage(image);
   if (get('footer')) embed.setFooter({ text: get('footer') });
   return { embed };
+}
+
+function previewMessage(id, draft) {
+  const where = draft.messageId
+    ? `replaces [this message](https://discord.com/channels/${draft.guildId}/${draft.channelId}/${draft.messageId})`
+    : `will be posted in <#${draft.channelId}>`;
+  return {
+    content: `**Preview**, ${where}.`,
+    embeds: [draft.embed],
+    components: [previewButtons('embed', id, { confirm: draft.messageId ? 'Save' : 'Post' })],
+  };
 }
 
 module.exports = {
@@ -102,25 +115,48 @@ module.exports = {
     if (message.author.id !== interaction.client.user.id || !message.embeds.length) {
       return interaction.reply({ content: '❌ I can only edit embeds that I posted.', flags: MessageFlags.Ephemeral });
     }
-    await interaction.showModal(buildModal(`embed:edit:${channel.id}:${message.id}`, 'Edit embed', message.embeds[0]));
+    await interaction.showModal(buildModal(`embed:edit:${channel.id}:${message.id}`, 'Edit embed', message.embeds[0].data));
   },
 
+  // Form submitted: "embed:create|edit:..." opens a preview, "embed:revise:<draftId>" updates one
   async handleModal(interaction) {
-    const [, action, channelId, messageId] = interaction.customId.split(':');
+    const [, action, ...rest] = interaction.customId.split(':');
     const { embed, error } = embedFromModal(interaction);
     if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
-    const channel = interaction.guild.channels.cache.get(channelId);
+    if (action === 'revise') {
+      const draft = getDraft(rest[0]);
+      if (!draft) return interaction.update(EXPIRED);
+      draft.embed = embed.toJSON();
+      return interaction.update(previewMessage(rest[0], draft));
+    }
+
+    const [channelId, messageId] = rest;
+    const draft = { guildId: interaction.guildId, channelId, messageId, embed: embed.toJSON() };
+    await interaction.reply({ ...previewMessage(saveDraft(draft), draft), flags: MessageFlags.Ephemeral });
+  },
+
+  // Post / Edit / Cancel under a preview
+  async handleComponent(interaction) {
+    const [, action, id] = interaction.customId.split(':');
+    const draft = getDraft(id);
+    if (!draft) return interaction.update(EXPIRED);
+
+    if (action === 'edit') return interaction.showModal(buildModal(`embed:revise:${id}`, 'Edit embed', draft.embed));
+    dropDraft(id);
+    if (action === 'cancel') return interaction.update(closePreview('Cancelled, nothing was posted.'));
+
+    const channel = interaction.guild.channels.cache.get(draft.channelId);
     try {
-      if (action === 'edit') {
-        const message = await channel.messages.fetch(messageId);
-        await message.edit({ embeds: [embed] });
-        return interaction.reply({ content: `✅ [Embed updated](${message.url}).`, flags: MessageFlags.Ephemeral });
+      if (draft.messageId) {
+        const message = await channel.messages.fetch(draft.messageId);
+        await message.edit({ embeds: [draft.embed] });
+        return interaction.update(closePreview(`✅ [Embed updated](${message.url}).`));
       }
-      const message = await channel.send({ embeds: [embed] });
-      await interaction.reply({ content: `✅ [Embed posted](${message.url}) in ${channel}.`, flags: MessageFlags.Ephemeral });
+      const message = await channel.send({ embeds: [draft.embed] });
+      await interaction.update(closePreview(`✅ [Embed posted](${message.url}) in ${channel}.`));
     } catch {
-      await interaction.reply({ content: `❌ I couldn't post in ${channel}. Check my permissions there.`, flags: MessageFlags.Ephemeral });
+      await interaction.update(closePreview(`❌ I couldn't post in ${channel}. Check my permissions there.`));
     }
   },
 };

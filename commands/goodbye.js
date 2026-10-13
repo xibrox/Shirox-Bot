@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
-
-const { PLACEHOLDERS } = require('../lib/greetings');
+const { DEFAULT_GOODBYE, PLACEHOLDERS, buildGreetingEmbed } = require('../lib/greetings');
+const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
 
 module.exports = {
   category: 'setup',
@@ -40,9 +40,12 @@ module.exports = {
         return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, flags: MessageFlags.Ephemeral });
       }
 
-      updateGuildConfig(interaction.guild.id, { goodbyeChannelId: channel.id, goodbyeMessage: message });
+      // Preview it with the person running the command standing in for the member
+      const id = saveDraft({ channelId: channel.id, message });
       return interaction.reply({
-        content: `✅ Goodbye messages will be sent in ${channel}.\nPlaceholders: ${PLACEHOLDERS}`,
+        content: `**Preview** of the goodbye message for ${channel}. Save it?`,
+        embeds: [buildGreetingEmbed(interaction.member, message || DEFAULT_GOODBYE, false)],
+        components: [previewButtons('goodbye', id, { confirm: 'Save', edit: false })],
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -60,5 +63,17 @@ module.exports = {
       content: `📢 Channel: <#${config.goodbyeChannelId}>\n💬 Message: ${config.goodbyeMessage || '*default*'}`,
       flags: MessageFlags.Ephemeral,
     });
+  },
+
+  // Save / Cancel under the preview from /goodbye set
+  async handleComponent(interaction) {
+    const [, action, id] = interaction.customId.split(':');
+    const draft = getDraft(id);
+    if (!draft) return interaction.update(EXPIRED);
+    dropDraft(id);
+    if (action === 'cancel') return interaction.update(closePreview('Cancelled, nothing was changed.'));
+
+    updateGuildConfig(interaction.guild.id, { goodbyeChannelId: draft.channelId, goodbyeMessage: draft.message });
+    await interaction.update(closePreview(`✅ Goodbye messages will be sent in <#${draft.channelId}>.\nPlaceholders: ${PLACEHOLDERS}`));
   },
 };

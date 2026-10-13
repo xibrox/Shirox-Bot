@@ -5,6 +5,8 @@ const {
 } = require('discord.js');
 const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices } = require('../lib/faq');
 const { EMBED_COLOR } = require('../lib/colors');
+const { faqEmbed } = require('./faq');
+const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
 
 function faqModal(customId, title, faq) {
   const question = new TextInputBuilder()
@@ -19,6 +21,14 @@ function faqModal(customId, title, faq) {
     new ActionRowBuilder().addComponents(question),
     new ActionRowBuilder().addComponents(answer),
   );
+}
+
+function previewMessage(id, draft) {
+  return {
+    content: `**Preview** of how ${draft.faqId ? 'the edited' : 'the new'} FAQ looks.`,
+    embeds: [faqEmbed(draft)],
+    components: [previewButtons('faqmanage', id, { confirm: 'Save' })],
+  };
 }
 
 const questionOption = option =>
@@ -83,19 +93,41 @@ module.exports = {
     await interaction.respond(faqChoices(interaction.guild.id, interaction.options.getFocused()));
   },
 
+  // Form submitted: "faqmanage:add|edit:<faqId>" opens a preview, "faqmanage:revise:<draftId>" updates one
   async handleModal(interaction) {
     const [, action, id] = interaction.customId.split(':');
     const question = interaction.fields.getTextInputValue('question').trim();
     const answer = interaction.fields.getTextInputValue('answer').trim();
 
-    if (action === 'edit') {
-      const faq = updateFaq(interaction.guild.id, id, question, answer);
-      return interaction.reply({
-        content: faq ? `✅ Updated **${question}**.\nRepost any FAQ panels to update their dropdown.` : '❌ That FAQ no longer exists.',
-        flags: MessageFlags.Ephemeral,
-      });
+    if (action === 'revise') {
+      const draft = getDraft(id);
+      if (!draft) return interaction.update(EXPIRED);
+      Object.assign(draft, { question, answer });
+      return interaction.update(previewMessage(id, draft));
+    }
+
+    const draft = { faqId: action === 'edit' ? id : null, question, answer };
+    await interaction.reply({ ...previewMessage(saveDraft(draft), draft), flags: MessageFlags.Ephemeral });
+  },
+
+  // Save / Edit / Cancel under a preview
+  async handleComponent(interaction) {
+    const [, action, id] = interaction.customId.split(':');
+    const draft = getDraft(id);
+    if (!draft) return interaction.update(EXPIRED);
+
+    if (action === 'edit') return interaction.showModal(faqModal(`faqmanage:revise:${id}`, 'Edit FAQ', draft));
+    dropDraft(id);
+    if (action === 'cancel') return interaction.update(closePreview('Cancelled, nothing was saved.'));
+
+    const { faqId, question, answer } = draft;
+    if (faqId) {
+      const faq = updateFaq(interaction.guild.id, faqId, question, answer);
+      return interaction.update(closePreview(faq
+        ? `✅ Updated **${question}**.\nRepost any FAQ panels to update their dropdown.`
+        : '❌ That FAQ no longer exists.'));
     }
     addFaq(interaction.guild.id, question, answer);
-    await interaction.reply({ content: `✅ Added **${question}**.`, flags: MessageFlags.Ephemeral });
+    await interaction.update(closePreview(`✅ Added **${question}**.`));
   },
 };
