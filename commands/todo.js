@@ -109,14 +109,14 @@ module.exports = {
     const card = readCard(interaction.message.embeds[0]);
 
     if (action === 'editcard') {
-      return interaction.showModal(todoModal('todo:card', `Edit todo #${card.number}`, {
+      return interaction.showModal(todoModal('todo:card', 'Edit todo', {
         title: embed.data.title, details: embed.data.description,
       }));
     }
     if (action === 'type') card.type = interaction.values[0];
     if (action === 'status') card.status = value;
 
-    setType(embed, card.type, card.number);
+    setType(embed, card.type);
     if (action === 'status') setStatus(embed, card.status, interaction.user);
     await interaction.update({ embeds: [embed], components: cardComponents(card.type, card.status) });
   },
