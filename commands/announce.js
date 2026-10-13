@@ -5,7 +5,7 @@ const {
 } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
-const { fetchNewCommits, writeChangelog } = require('../lib/changelog');
+const { fetchNewCommits, findBuildCommit, writeChangelog } = require('../lib/changelog');
 const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
 
 const DEFAULT_REPO = 'xibrox/Shirox';
@@ -18,19 +18,29 @@ function parseRepo(input) {
 
 const escapeRegex = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Where the last announcement left off: saved commit, else the newest announcement link
-// in the channel, else the time of the channel's last message
+// Where the last announcement left off, newest message first: the commit the bot last announced,
+// a GitHub link in one of the bot's announcements, or a message mentioning a build number
+// (like "build 120", matched to the commit that bumped to it). Otherwise the channel's last message.
 async function findStartPoint(channel, repo, config) {
-  if (config.announceLastSha && config.announceRepo === repo) return { sinceSha: config.announceLastSha };
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  if (!messages?.size) return {};
-  const link = new RegExp(`github\\.com/${escapeRegex(repo)}/(?:compare/\\w+\\.\\.\\.(\\w+)|commit/(\\w+))`, 'i');
-  for (const message of messages.values()) {
-    if (message.author.id !== channel.client.user.id) continue;
-    const match = message.embeds[0]?.url?.match(link);
-    if (match) return { sinceSha: match[1] ?? match[2] };
+  if (config.announceLastSha && config.announceRepo === repo) {
+    return { sinceSha: config.announceLastSha, label: 'the last announcement' };
   }
-  return { sinceDate: messages.first().createdAt };
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+  if (!messages?.size) return { label: 'the latest commits' };
+  const link = new RegExp(`github\\.com/${escapeRegex(repo)}/(?:compare/\\w+\\.\\.\\.(\\w+)|commit/(\\w+))`, 'i');
+  const commitCache = {};
+  for (const message of messages.values()) {
+    if (message.author.id === channel.client.user.id) {
+      const match = message.embeds[0]?.url?.match(link);
+      if (match) return { sinceSha: match[1] ?? match[2], label: `[this announcement](${message.url})` };
+    }
+    const text = [message.content, ...message.embeds.flatMap(e => [e.title, e.description])].filter(Boolean).join('\n');
+    const build = text.match(/\bbuild\s*#?\s*(\d{2,})\b/i)?.[1];
+    const commit = build && await findBuildCommit(repo, build, commitCache).catch(() => null);
+    if (commit) return { sinceSha: commit.sha, label: `build ${build} ([announced here](${message.url}))` };
+  }
+  const last = messages.first();
+  return { sinceDate: last.createdAt, label: `[the last message](${last.url})` };
 }
 
 function announcementEmbed(draft) {
@@ -60,7 +70,7 @@ function previewMessage(id, draft) {
     .setDefaultRoles(draft.roleIds);
   const regenerate = new ButtonBuilder().setCustomId(`announce:regen:${id}`).setLabel('Rewrite').setStyle(ButtonStyle.Secondary);
   return {
-    content: `**Preview** for <#${draft.channelId}>, ${writer}.\n${pings}`,
+    content: `**Preview** for <#${draft.channelId}>, ${writer}.\nCommits since ${draft.startLabel}. Wrong start? Run it again with \`from:\`.\n${pings}`,
     embeds: [announcementEmbed(draft)],
     components: [new ActionRowBuilder().addComponents(roles), previewButtons('announce', id, { extra: [regenerate] })],
     allowedMentions: { parse: [] },
@@ -134,7 +144,7 @@ module.exports = {
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const from = interaction.options.getString('from')?.trim();
-    const start = from ? { sinceSha: from } : await findStartPoint(channel, repo, config);
+    const start = from ? { sinceSha: from, label: `commit \`${from.slice(0, 7)}\`` } : await findStartPoint(channel, repo, config);
 
     let commits;
     try {
@@ -143,8 +153,7 @@ module.exports = {
       return interaction.editReply(`❌ Couldn't read commits from **${repo}**: ${err.message}`);
     }
     if (!commits.length) {
-      const since = start.sinceSha ? `commit \`${start.sinceSha.slice(0, 7)}\`` : 'the last message there';
-      return interaction.editReply(`Nothing new on **${repo}** since ${since}.`);
+      return interaction.editReply(`Nothing new on **${repo}** since ${start.label}.`);
     }
 
     await interaction.editReply(`✍️ Writing the changelog from ${commits.length} commit${commits.length === 1 ? '' : 's'}, this can take a minute…`);
@@ -153,6 +162,7 @@ module.exports = {
       repo,
       commits,
       baseSha: start.sinceSha ?? null,
+      startLabel: start.label,
       roleIds: (config.announceRoleIds ?? []).filter(id => interaction.guild.roles.cache.has(id)),
       ...(await writeChangelog(commits, repo)),
     };
