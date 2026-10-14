@@ -14,7 +14,7 @@ module.exports = {
         if (ban) return;
 
         const config = getGuildConfig(member.guild.id);
-        if (config.restoreRoles && !member.partial) saveMemberRoles(member);
+        const saved = config.restoreRoles && !member.partial ? saveMemberRoles(member) : null;
         if (config.goodbyeChannelId) {
             const template = config.goodbyeMessage || DEFAULT_GOODBYE;
             await sendGreeting(member, config.goodbyeChannelId, template, false);
@@ -27,7 +27,7 @@ module.exports = {
                 { name: "Moderator", value: userField(kick.executor) },
                 { name: "Reason", value: kick.reason || "No reason provided" },
             )
-            : createLogEmbed("warning", "📤 Member left").addFields({ name: "User", value: userField(member.user) });
+            : createLogEmbed("danger", "📤 Member left").addFields({ name: "User", value: userField(member.user) });
 
         embed.setThumbnail(member.user.displayAvatarURL());
         if (member.joinedTimestamp) {
@@ -35,6 +35,12 @@ module.exports = {
         }
         const roles = member.roles?.cache.filter(r => r.id !== member.guild.id).map(r => `${r}`) || [];
         if (roles.length) embed.addFields({ name: "Roles", value: roles.join(" ").slice(0, 1024) });
+        if (saved) {
+            const lines = [];
+            if (saved.roles.length) lines.push(saved.roles.map(id => `<@&${id}>`).join(" "));
+            if (saved.nickname) lines.push(`Nickname: \`${saved.nickname}\``);
+            embed.addFields({ name: "♻️ Saved for restore", value: lines.join("\n").slice(0, 1024) });
+        }
 
         await sendLog(member.guild, embed);
     },
