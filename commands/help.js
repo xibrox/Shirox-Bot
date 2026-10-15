@@ -18,18 +18,9 @@ function canUse(command, interaction) {
   return !!interaction.memberPermissions?.has(BigInt(required));
 }
 
-// Modules that are also entries of a group command (/setup, /mod) are listed inside that group instead,
-// unless the member can't see the group (e.g. Manage Messages without Timeout Members still gets /purge)
-function groupedModules(interaction) {
-  return new Set([...interaction.client.commands.values()]
-    .filter(c => c.entries && canUse(c, interaction))
-    .flatMap(c => Object.values(c.entries)));
-}
-
 function visibleCommands(interaction, category) {
-  const grouped = groupedModules(interaction);
   return [...interaction.client.commands.values()]
-    .filter(c => c.category === category && !grouped.has(c) && canUse(c, interaction))
+    .filter(c => c.category === category && canUse(c, interaction))
     .sort((a, b) => a.data.name.localeCompare(b.data.name));
 }
 
@@ -41,7 +32,7 @@ function formatOptions(options = []) {
 }
 
 // One or more lines of help text for a command, generated from its definition
-function describeCommand(command, name = command.data.name) {
+function describe(command) {
   const json = command.data.toJSON();
   if (json.type === ApplicationCommandType.User || json.type === ApplicationCommandType.Message) {
     const target = json.type === ApplicationCommandType.User ? 'a user' : 'a message';
@@ -50,24 +41,16 @@ function describeCommand(command, name = command.data.name) {
 
   const subcommands = (json.options || []).filter(o => o.type === ApplicationCommandOptionType.Subcommand);
   if (subcommands.length) {
-    const lines = subcommands.map(s => `\`/${name} ${s.name}${formatOptions(s.options) ? ` ${formatOptions(s.options)}` : ''}\`: ${s.description}`);
-    return `**/${name}**: ${json.description}\n${lines.join('\n')}`;
+    const lines = subcommands.map(s => `\`/${json.name} ${s.name}${formatOptions(s.options) ? ` ${formatOptions(s.options)}` : ''}\`: ${s.description}`);
+    return `**/${json.name}**: ${json.description}\n${lines.join('\n')}`;
   }
   const usage = formatOptions(json.options);
-  return `**\`/${name}${usage ? ` ${usage}` : ''}\`**\n${json.description}`;
-}
-
-// Help sections for a command; group commands get one section per entry the member can use
-function describe(command, interaction) {
-  if (!command.entries) return [describeCommand(command)];
-  return Object.entries(command.entries)
-    .filter(([, source]) => canUse(source, interaction))
-    .map(([entryName, source]) => `${describeCommand(source, `${command.data.name} ${entryName}`)}\nShortcut: \`/${source.data.name}\``);
+  return `**\`/${json.name}${usage ? ` ${usage}` : ''}\`**\n${json.description}`;
 }
 
 // Splits long help text across several embeds (4096 character limit each)
 function categoryEmbeds(interaction, category) {
-  const sections = visibleCommands(interaction, category).flatMap(command => describe(command, interaction));
+  const sections = visibleCommands(interaction, category).map(describe);
   const embeds = [];
   let text = '';
   for (const section of sections) {
@@ -85,11 +68,6 @@ function categoryEmbeds(interaction, category) {
     if (i === embeds.length - 1) embed.setFooter({ text: '<required> [optional]' });
     return embed;
   });
-}
-
-// Each usable entry of a group command counts as its own command
-function commandCount(interaction, category) {
-  return visibleCommands(interaction, category).reduce((n, c) => n + (c.entries ? describe(c, interaction).length : 1), 0);
 }
 
 function availableCategories(interaction) {
@@ -119,7 +97,7 @@ function overviewEmbed(interaction) {
     .setDescription('Pick a category from the menu below, or use `/help [category]`.')
     .addFields(categories.map(c => ({
       name: CATEGORIES[c].title,
-      value: `${CATEGORIES[c].blurb}\n${commandCount(interaction, c)} commands`,
+      value: `${CATEGORIES[c].blurb}\n${visibleCommands(interaction, c).length} commands`,
       inline: true,
     })))
     .setFooter({ text: PREFIX_NOTE });
@@ -127,9 +105,6 @@ function overviewEmbed(interaction) {
 
 module.exports = {
   category: 'utility',
-  visibleCommands,
-  describe,
-  commandCount,
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Shows all available commands')
