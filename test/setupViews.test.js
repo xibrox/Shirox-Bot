@@ -49,6 +49,24 @@ function expectRoutable(payload) {
     }
 }
 
+// Saved channels/roles may have been deleted since; menus must not preselect them
+test("pickers only preselect channels and roles that still exist", () => {
+    const interaction = filledInteraction();
+    for (const section of SECTIONS) {
+        for (const row of rowsOf(section.view(interaction))) {
+            for (const component of row.components) expect(component.default_values).toBeUndefined();
+        }
+    }
+});
+
+test("pickers preselect a saved channel that exists", () => {
+    const channel = { id: "live" };
+    const interaction = fakeInteraction({ guild: fakeGuild({ channels: [channel] }) });
+    updateGuildConfig(interaction.guild.id, { logChannelId: "live" });
+    const logs = SECTIONS.find(s => s.id === "logs");
+    expect(rowsOf(logs.view(interaction))[0].components[0].default_values).toEqual([{ id: "live", type: "channel" }]);
+});
+
 describe("home view", () => {
     for (const [name, make] of SETTINGS) {
         test(`is valid with ${name} settings`, () => {
