@@ -9,7 +9,9 @@ const CATEGORIES = {
   apps: { title: '🖱️ Right-click Apps', blurb: 'Right-click a user or message → Apps' },
 };
 
-const PREFIX_NOTE = 'Prefix commands also work: !quote !roll !coin !choose !number !say';
+const { prefixFor } = require('../events/prefixCommands');
+
+const prefixNote = guild => `Prefix commands also work: ${['quote', 'roll', 'coin', 'choose', 'number', 'say'].map(c => prefixFor(guild) + c).join(' ')}`;
 
 // Members only see commands they have the Discord permissions to use
 function canUse(command, interaction) {
@@ -100,7 +102,7 @@ function overviewEmbed(interaction) {
       value: `${CATEGORIES[c].blurb}\n${visibleCommands(interaction, c).length} commands`,
       inline: true,
     })))
-    .setFooter({ text: PREFIX_NOTE });
+    .setFooter({ text: prefixNote(interaction.guild) });
 }
 
 module.exports = {
