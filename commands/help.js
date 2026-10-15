@@ -18,9 +18,15 @@ function canUse(command, interaction) {
   return !!interaction.memberPermissions?.has(BigInt(required));
 }
 
+// Modules that are also entries of a group command (/setup, /mod) are listed inside that group instead
+function groupedModules(client) {
+  return new Set([...client.commands.values()].flatMap(c => Object.values(c.entries || {})));
+}
+
 function visibleCommands(interaction, category) {
+  const grouped = groupedModules(interaction.client);
   return [...interaction.client.commands.values()]
-    .filter(c => c.category === category && canUse(c, interaction))
+    .filter(c => c.category === category && !grouped.has(c) && canUse(c, interaction))
     .sort((a, b) => a.data.name.localeCompare(b.data.name));
 }
 
@@ -32,7 +38,7 @@ function formatOptions(options = []) {
 }
 
 // One or more lines of help text for a command, generated from its definition
-function describe(command) {
+function describeCommand(command, name = command.data.name) {
   const json = command.data.toJSON();
   if (json.type === ApplicationCommandType.User || json.type === ApplicationCommandType.Message) {
     const target = json.type === ApplicationCommandType.User ? 'a user' : 'a message';
@@ -41,16 +47,24 @@ function describe(command) {
 
   const subcommands = (json.options || []).filter(o => o.type === ApplicationCommandOptionType.Subcommand);
   if (subcommands.length) {
-    const lines = subcommands.map(s => `\`/${json.name} ${s.name}${formatOptions(s.options) ? ` ${formatOptions(s.options)}` : ''}\`: ${s.description}`);
-    return `**/${json.name}**: ${json.description}\n${lines.join('\n')}`;
+    const lines = subcommands.map(s => `\`/${name} ${s.name}${formatOptions(s.options) ? ` ${formatOptions(s.options)}` : ''}\`: ${s.description}`);
+    return `**/${name}**: ${json.description}\n${lines.join('\n')}`;
   }
   const usage = formatOptions(json.options);
-  return `**\`/${json.name}${usage ? ` ${usage}` : ''}\`**\n${json.description}`;
+  return `**\`/${name}${usage ? ` ${usage}` : ''}\`**\n${json.description}`;
+}
+
+// Help sections for a command; group commands get one section per entry the member can use
+function describe(command, interaction) {
+  if (!command.entries) return [describeCommand(command)];
+  return Object.entries(command.entries)
+    .filter(([, source]) => canUse(source, interaction))
+    .map(([entryName, source]) => `${describeCommand(source, `${command.data.name} ${entryName}`)}\nShortcut: \`/${source.data.name}\``);
 }
 
 // Splits long help text across several embeds (4096 character limit each)
 function categoryEmbeds(interaction, category) {
-  const sections = visibleCommands(interaction, category).map(describe);
+  const sections = visibleCommands(interaction, category).flatMap(command => describe(command, interaction));
   const embeds = [];
   let text = '';
   for (const section of sections) {
@@ -105,6 +119,8 @@ function overviewEmbed(interaction) {
 
 module.exports = {
   category: 'utility',
+  visibleCommands,
+  describe,
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Shows all available commands')
