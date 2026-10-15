@@ -25,3 +25,9 @@ test("the warning says what happens to people who post", () => {
     expect(honeypotWarningEmbed("ban").toJSON().description).toContain("automatically banned");
     expect(honeypotWarningEmbed("softban").toJSON().description).toContain("removed from the server");
 });
+
+test("the warning uses custom text with {action}", () => {
+    const json = honeypotWarningEmbed("kick", { title: "Stop!", text: "You will be {action}." }).toJSON();
+    expect(json.title).toBe("Stop!");
+    expect(json.description).toBe("You will be kicked.");
+});

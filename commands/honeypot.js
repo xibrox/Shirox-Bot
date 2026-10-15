@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
-const { ACTION_LABELS, honeypotError, honeypotWarningEmbed } = require('../lib/honeypot');
+const { ACTION_LABELS, honeypotError, savedWarning } = require('../lib/honeypot');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 
 module.exports = {
@@ -46,7 +46,7 @@ module.exports = {
       if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
       updateGuildConfig(interaction.guild.id, { honeypotChannelId: channel.id, honeypotAction: action, honeypotOff: null });
-      if (postWarning) await channel.send({ embeds: [honeypotWarningEmbed(action)] }).catch(() => {});
+      if (postWarning) await channel.send({ embeds: [savedWarning(getGuildConfig(interaction.guild.id), action)] }).catch(() => {});
 
       return interaction.reply({
         content: `🍯 Honeypot active in ${channel}.\nAction: **${ACTION_LABELS[action]}**\nStaff with **Manage Messages** are ignored.\n` +

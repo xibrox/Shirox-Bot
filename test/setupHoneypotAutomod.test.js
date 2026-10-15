@@ -46,6 +46,37 @@ describe("honeypot section", () => {
         expect(channel.send.mock.calls[0][0].embeds[0].toJSON().description).toContain("automatically banned");
         expect(update(interaction).content).toBe(`✅ Warning posted in <#${channel.id}>.`);
     });
+    test("Warning text saves and Post warning uses it", async () => {
+        const channel = fakeChannel();
+        const guild = fakeGuild({ channels: [channel] });
+        updateGuildConfig(guild.id, { honeypotChannelId: channel.id, honeypotAction: "kick" });
+        const save = fakeInteraction({ guild, customId: "setup:honeypot:text", fields: { title: "Stop!", text: "You get {action}." } });
+        await setup.handleModal(save);
+        expect(getGuildConfig(guild.id)).toMatchObject({ honeypotWarningTitle: "Stop!", honeypotWarningText: "You get {action}." });
+        expect(update(save).content).toBe("✅ Warning text saved. Use 📤 Post warning to update the notice in the channel.");
+
+        const post = fakeInteraction({ guild, customId: "setup:honeypot:warning" });
+        await setup.handleComponent(post);
+        expect(channel.send.mock.calls[0][0].embeds[0].toJSON()).toMatchObject({ title: "Stop!", description: "You get kicked." });
+    });
+
+    test("Preview warning replies privately without posting", async () => {
+        const channel = fakeChannel();
+        const guild = fakeGuild({ channels: [channel] });
+        updateGuildConfig(guild.id, { honeypotChannelId: channel.id });
+        const interaction = fakeInteraction({ guild, customId: "setup:honeypot:preview" });
+        await setup.handleComponent(interaction);
+        expect(interaction.reply.mock.calls[0][0].embeds[0].toJSON().title).toBe("⚠️ DO NOT SEND MESSAGES IN THIS CHANNEL");
+        expect(channel.send).not.toHaveBeenCalled();
+    });
+
+    test("Pause keeps the channel and action", async () => {
+        const interaction = fakeInteraction({ customId: "setup:honeypot:pause" });
+        updateGuildConfig(interaction.guild.id, { honeypotChannelId: "c1", honeypotAction: "kick" });
+        await setup.handleComponent(interaction);
+        expect(getGuildConfig(interaction.guild.id)).toMatchObject({ honeypotChannelId: "c1", honeypotAction: "kick", honeypotOff: true });
+        expect(update(interaction).content).toBe("⏸️ Honeypot paused. Your settings are kept.");
+    });
 });
 
 describe("automod section", () => {
