@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { checkAssignableRole } = require('../lib/moderation');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { changeRoles, replyResult } = require('../lib/modActions');
 
 module.exports = {
   category: 'moderation',
@@ -21,22 +21,7 @@ module.exports = {
 
   async execute(interaction) {
     const adding = interaction.options.getSubcommand() === 'add';
-    const target = interaction.options.getMember('user');
-    const role = interaction.options.getRole('role');
-    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', flags: MessageFlags.Ephemeral });
-
-    const error = checkAssignableRole(interaction, role);
-    if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
-
-    const hasRole = target.roles.cache.has(role.id);
-    if (adding && hasRole) return interaction.reply({ content: `${target} already has ${role}.`, flags: MessageFlags.Ephemeral });
-    if (!adding && !hasRole) return interaction.reply({ content: `${target} doesn't have ${role}.`, flags: MessageFlags.Ephemeral });
-
-    const reason = `By ${interaction.user.tag}`;
-    await (adding ? target.roles.add(role, reason) : target.roles.remove(role, reason));
-    await interaction.reply({
-      content: adding ? `✅ Gave ${role} to ${target}.` : `✅ Removed ${role} from ${target}.`,
-      allowedMentions: { parse: [] },
-    });
+    const result = await changeRoles(interaction, interaction.options.getMember('user'), [interaction.options.getRole('role')], adding);
+    await replyResult(interaction, result);
   },
 };
