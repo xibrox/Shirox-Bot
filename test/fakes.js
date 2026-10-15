@@ -105,7 +105,9 @@ function fakeGuild({ botPermissions = PermissionFlagsBits.Administrator, channel
             }),
         },
         bans: {
-            fetch: mock(async userId => {
+            // Like discord.js: an id, { user, force }, or nothing for the whole list
+            fetch: mock(async arg => {
+                const userId = typeof arg === "object" ? arg?.user : arg;
                 const entry = u => ({ user: { id: u, tag: `user#${u}` }, reason: "spam" });
                 if (userId) {
                     if (!banned.has(userId)) throw new Error("Unknown Ban");
