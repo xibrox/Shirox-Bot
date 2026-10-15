@@ -4,6 +4,8 @@ const { SECTIONS } = require("../lib/setup/sections");
 const { updateGuildConfig } = require("../lib/guildConfig");
 const { addFaq } = require("../lib/faq");
 const { fakeGuild, fakeInteraction } = require("./fakes");
+const { rowsOf, expectWithinDiscordLimits } = require("./limits");
+const { savePanel } = require("../lib/selfRolePanels");
 
 const FILLED = {
     welcomeChannelId: "c1", welcomeMessage: "Hi {user}", goodbyeChannelId: "c2", goodbyeMessage: "Bye {username}",
@@ -17,27 +19,15 @@ function filledInteraction() {
     const interaction = fakeInteraction();
     updateGuildConfig(interaction.guild.id, FILLED);
     for (let i = 0; i < 30; i++) addFaq(interaction.guild.id, `Question ${i} ${"x".repeat(180)}`, "Answer");
+    for (let i = 0; i < 30; i++) {
+        savePanel(interaction.guild.id, {
+            messageId: `m${i}`, channelId: "c1", title: `Panel ${i} ${"y".repeat(190)}`, description: null, roleIds: ["r1"],
+        });
+    }
     return interaction;
 }
 
 const SETTINGS = [["empty", () => fakeInteraction()], ["filled", filledInteraction]];
-const rowsOf = payload => payload.components.map(row => row.toJSON());
-
-// Discord rejects messages that break these limits with "interaction failed"
-function expectWithinDiscordLimits(payload) {
-    expect(payload.components.length).toBeLessThanOrEqual(5);
-    for (const embed of payload.embeds) expect((embed.toJSON().description ?? "").length).toBeLessThanOrEqual(4096);
-    for (const row of rowsOf(payload)) {
-        expect(row.components.length).toBeLessThanOrEqual(5);
-        for (const component of row.components) {
-            expect(component.custom_id.length).toBeLessThanOrEqual(100);
-            expect(component.custom_id).toMatch(/^(setup|faqmanage):/);
-            if (component.options) expect(component.options.length).toBeLessThanOrEqual(25);
-            for (const option of component.options ?? []) expect(option.label.length).toBeLessThanOrEqual(100);
-        }
-    }
-}
-
 // Every "setup:" id a view produces must reach a section handler
 function expectRoutable(payload) {
     for (const row of rowsOf(payload)) {

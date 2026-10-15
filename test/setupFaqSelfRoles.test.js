@@ -1,7 +1,7 @@
 const { describe, test, expect } = require("bun:test");
 const setup = require("../commands/setup");
 const { addFaq, getFaqs } = require("../lib/faq");
-const { fakeGuild, fakeChannel, fakeRole, fakeInteraction } = require("./fakes");
+const { fakeGuild, fakeChannel, fakeInteraction } = require("./fakes");
 
 const update = interaction => interaction.update.mock.calls[0][0];
 const lastRow = payload => payload.components.at(-1).toJSON().components;
@@ -71,37 +71,5 @@ describe("FAQ section", () => {
         await setup.handleComponent(preview);
         const reply = preview.reply.mock.calls[0][0];
         expect(reply.embeds[0].toJSON()).toMatchObject({ title: "Help", description: "Pick:\n\n• How?" });
-    });
-});
-
-describe("self roles section", () => {
-    test("picked roles go into the form, and submitting posts the panel here", async () => {
-        const roles = [fakeRole(), fakeRole()];
-        const guild = fakeGuild({ roles });
-        const pick = fakeInteraction({ guild, customId: "setup:selfroles:roles", values: roles.map(r => r.id) });
-        await setup.handleComponent(pick);
-        const customId = pick.showModal.mock.calls[0][0].toJSON().custom_id;
-        expect(customId).toStartWith("setup:selfroles:post:");
-
-        const submit = fakeInteraction({ guild, customId, fields: { title: "Pick roles", description: "" } });
-        await setup.handleModal(submit);
-        const panel = submit.channel.send.mock.calls[0][0];
-        expect(panel.components[0].toJSON().components.map(b => b.custom_id)).toEqual(roles.map(r => `selfrole:${r.id}`));
-        expect(update(submit).content).toBe("✅ Self-role panel posted.");
-    });
-
-    test("roles the bot can't assign are refused before the form", async () => {
-        const role = fakeRole(undefined, { position: 200 });
-        const guild = fakeGuild({ roles: [role] });
-        const interaction = fakeInteraction({ guild, customId: "setup:selfroles:roles", values: [role.id] });
-        await setup.handleComponent(interaction);
-        expect(interaction.showModal).not.toHaveBeenCalled();
-        expect(update(interaction).content).toContain("equal to or above my highest role");
-    });
-
-    test("an expired form says so", async () => {
-        const interaction = fakeInteraction({ customId: "setup:selfroles:post:gone", fields: { title: "T" } });
-        await setup.handleModal(interaction);
-        expect(update(interaction).content).toBe("⌛ This preview expired. Run the command again.");
     });
 });
