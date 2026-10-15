@@ -2,8 +2,13 @@ const { test, expect } = require("bun:test");
 const { buildSelfRolePanel, MAX_SELF_ROLES } = require("../lib/selfRoles");
 const { fakeRole } = require("./fakes");
 
-test("allows up to 10 roles", () => {
-    expect(MAX_SELF_ROLES).toBe(10);
+test("allows up to 25 roles", () => {
+    expect(MAX_SELF_ROLES).toBe(25);
+});
+
+test("25 roles fit in five rows of five buttons", () => {
+    const roles = Array.from({ length: 25 }, (_, i) => fakeRole(`r${i}`));
+    expect(buildSelfRolePanel("Pick roles", null, roles).components).toHaveLength(5);
 });
 
 test("10 roles fit in two rows of five buttons", () => {

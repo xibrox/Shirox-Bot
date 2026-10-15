@@ -1,13 +1,17 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { MAX_SELF_ROLES, buildSelfRolePanel } = require('../lib/selfRoles');
+const { buildSelfRolePanel } = require('../lib/selfRoles');
+const { savePanel } = require('../lib/selfRolePanels');
 const { checkAssignableRole } = require('../lib/moderation');
+
+// Slash commands allow 25 options in total, so /selfroles keeps 10 role slots (the dashboard allows 25)
+const SLASH_ROLE_OPTIONS = 10;
 
 const data = new SlashCommandBuilder()
   .setName('selfroles')
   .setDescription('Post a panel of buttons members can click to give themselves roles')
   .addStringOption(option => option.setName('title').setDescription('Panel title').setMaxLength(200).setRequired(true))
   .addRoleOption(option => option.setName('role1').setDescription('Role 1').setRequired(true));
-for (let i = 2; i <= MAX_SELF_ROLES; i++) {
+for (let i = 2; i <= SLASH_ROLE_OPTIONS; i++) {
   data.addRoleOption(option => option.setName(`role${i}`).setDescription(`Role ${i}`));
 }
 data
@@ -21,7 +25,7 @@ module.exports = {
 
   async execute(interaction) {
     const roles = [];
-    for (let i = 1; i <= MAX_SELF_ROLES; i++) {
+    for (let i = 1; i <= SLASH_ROLE_OPTIONS; i++) {
       const role = interaction.options.getRole(`role${i}`);
       if (role && !roles.some(r => r.id === role.id)) roles.push(role);
     }
@@ -34,7 +38,14 @@ module.exports = {
     const panel = buildSelfRolePanel(interaction.options.getString('title'), interaction.options.getString('description'), roles);
 
     try {
-      await interaction.channel.send(panel);
+      const message = await interaction.channel.send(panel);
+      savePanel(interaction.guild.id, {
+        messageId: message.id,
+        channelId: message.channelId,
+        title: interaction.options.getString('title'),
+        description: interaction.options.getString('description'),
+        roleIds: roles.map(r => r.id),
+      });
       await interaction.reply({ content: '✅ Self-role panel posted.', flags: MessageFlags.Ephemeral });
     } catch {
       await interaction.reply({ content: "❌ I couldn't post in this channel.", flags: MessageFlags.Ephemeral });
