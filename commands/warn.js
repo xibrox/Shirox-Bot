@@ -1,6 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { addWarning } = require('../lib/warnings');
-const { createLogEmbed, sendLog, userField } = require('../lib/logger');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { warnUser, replyResult } = require('../lib/modActions');
 
 module.exports = {
   category: 'moderation',
@@ -13,27 +12,7 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
-    const user = interaction.options.getUser('user');
-    const reason = interaction.options.getString('reason');
-    if (user.bot) return interaction.reply({ content: "❌ You can't warn bots.", flags: MessageFlags.Ephemeral });
-    if (user.id === interaction.user.id) return interaction.reply({ content: "❌ You can't warn yourself.", flags: MessageFlags.Ephemeral });
-
-    const warnings = addWarning(interaction.guild.id, user.id, reason, interaction.user.id);
-    const dmSent = await user.send(`⚠️ You were warned in **${interaction.guild.name}**. Reason: ${reason}`)
-      .then(() => true, () => false);
-
-    await interaction.reply(
-      `⚠️ Warned **${user.tag}** (warning #${warnings.at(-1).id}, ${warnings.length} total). Reason: ${reason}` +
-      (dmSent ? '' : "\n*(Couldn't DM them.)*"),
-    );
-
-    const embed = createLogEmbed('warning', '⚠️ Member warned')
-      .addFields(
-        { name: 'User', value: userField(user) },
-        { name: 'Moderator', value: userField(interaction.user) },
-        { name: 'Reason', value: reason },
-        { name: 'Total warnings', value: `${warnings.length}`, inline: true },
-      );
-    await sendLog(interaction.guild, 'moderation', embed);
+    const result = await warnUser(interaction, interaction.options.getUser('user'), interaction.options.getString('reason'));
+    await replyResult(interaction, result);
   },
 };

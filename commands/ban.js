@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { checkHierarchy } = require('../lib/moderation');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { banUser, replyResult } = require('../lib/modActions');
 
 module.exports = {
   category: 'moderation',
@@ -21,25 +21,13 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
-    const user = interaction.options.getUser('user');
-    const target = interaction.options.getMember('user');
-    const reason = interaction.options.getString('reason') || 'No reason provided';
-    const deleteMessageSeconds = interaction.options.getInteger('delete_messages') ?? 0;
-
-    // Users who aren't in the server can still be banned (hackban)
-    if (target) {
-      const error = checkHierarchy(interaction, target);
-      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
-      if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", flags: MessageFlags.Ephemeral });
-      await target.send(`🔨 You were banned from **${interaction.guild.name}**. Reason: ${reason}`).catch(() => {});
-    }
-
-    try {
-      await interaction.guild.members.ban(user, { reason: `${interaction.user.tag}: ${reason}`, deleteMessageSeconds });
-      await interaction.reply(`🔨 Banned **${user.tag}**. Reason: ${reason}`);
-    } catch (err) {
-      console.error('❌ Ban failed:', err);
-      await interaction.reply({ content: '❌ Failed to ban that user. Do I have **Ban Members**?', flags: MessageFlags.Ephemeral });
-    }
+    const result = await banUser(
+      interaction,
+      interaction.options.getUser('user'),
+      interaction.options.getMember('user'),
+      interaction.options.getString('reason') || 'No reason provided',
+      interaction.options.getInteger('delete_messages') ?? 0,
+    );
+    await replyResult(interaction, result);
   },
 };

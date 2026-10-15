@@ -1,6 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { checkHierarchy, softban } = require('../lib/moderation');
-const { createLogEmbed, sendLog, userField, suppressLogsFor } = require('../lib/logger');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { softbanMember, replyResult } = require('../lib/modActions');
 
 module.exports = {
   category: 'moderation',
@@ -21,35 +20,12 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
-    const target = interaction.options.getMember('user');
-    const reason = interaction.options.getString('reason') || 'No reason provided';
-    const deleteMessageSeconds = interaction.options.getInteger('delete_messages') ?? 86_400;
-    if (!target) return interaction.reply({ content: '❌ That user is not in this server.', flags: MessageFlags.Ephemeral });
-
-    const error = checkHierarchy(interaction, target);
-    if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
-    if (!target.bannable) return interaction.reply({ content: "❌ I can't ban that member.", flags: MessageFlags.Ephemeral });
-
-    await target.send(
-      `🧹 You were soft banned from **${interaction.guild.name}** (removed and recent messages deleted). You can rejoin. Reason: ${reason}`,
-    ).catch(() => {});
-
-    try {
-      suppressLogsFor(target.id);
-      await softban(interaction.guild, target.id, `${interaction.user.tag}: ${reason}`, deleteMessageSeconds);
-    } catch (err) {
-      console.error('❌ Soft ban failed:', err);
-      return interaction.reply({ content: '❌ Soft ban failed. Do I have **Ban Members**?', flags: MessageFlags.Ephemeral });
-    }
-
-    await interaction.reply(`🧹 Soft banned **${target.user.tag}**. Reason: ${reason}`);
-    const embed = createLogEmbed('danger', '🧹 Member soft banned')
-      .setThumbnail(target.user.displayAvatarURL())
-      .addFields(
-        { name: 'User', value: userField(target.user) },
-        { name: 'Moderator', value: userField(interaction.user) },
-        { name: 'Reason', value: reason },
-      );
-    await sendLog(interaction.guild, 'moderation', embed);
+    const result = await softbanMember(
+      interaction,
+      interaction.options.getMember('user'),
+      interaction.options.getString('reason') || 'No reason provided',
+      interaction.options.getInteger('delete_messages') ?? 86_400,
+    );
+    await replyResult(interaction, result);
   },
 };
