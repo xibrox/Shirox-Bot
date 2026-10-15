@@ -16,12 +16,13 @@ function panelChannel() {
     const messages = new Map();
     channel.send = mock(async () => {
         const message = { id: `msg${messages.size + 1}`, channelId: channel.id, edit: mock(async () => {}) };
+        message.delete = mock(async () => { messages.delete(message.id); });
         messages.set(message.id, message);
         return message;
     });
     channel.messages = {
         fetch: mock(async id => {
-            if (!messages.has(id)) throw new Error("Unknown Message");
+            if (!messages.has(id)) throw Object.assign(new Error("Unknown Message"), { code: 10008 });
             return messages.get(id);
         }),
         delete: mock(async id => { messages.delete(id); }),
@@ -77,7 +78,7 @@ describe("new panel", () => {
 
     test("an expired draft goes back to the list", async () => {
         const interaction = await click(fakeGuild(), "setup:selfroles:post:gone");
-        expect(update(interaction).content).toBe("⌛ This preview expired. Run the command again.");
+        expect(update(interaction).content).toBe("⌛ That draft expired. Start a new panel.");
     });
 
     test("Preview shows the panel with disabled buttons", async () => {
@@ -123,10 +124,10 @@ describe("editing a panel", () => {
         const { guild, channel, message } = await posted();
         const ask = await click(guild, `setup:selfroles:delete:${message.id}`);
         expect(customIds(update(ask))).toContain(`setup:selfroles:confirmdelete:${message.id}`);
-        expect(channel.messages.delete).not.toHaveBeenCalled();
+        expect(message.delete).not.toHaveBeenCalled();
 
         const confirm = await click(guild, `setup:selfroles:confirmdelete:${message.id}`);
-        expect(channel.messages.delete).toHaveBeenCalledWith(message.id);
+        expect(message.delete).toHaveBeenCalled();
         expect(getPanels(guild.id)).toEqual([]);
         expect(update(confirm).content).toBe("🗑️ Deleted **Colors**.");
     });

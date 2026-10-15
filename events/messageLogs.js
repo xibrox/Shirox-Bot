@@ -20,7 +20,8 @@ module.exports = [
         name: Events.MessageCreate,
         async execute(message) {
             if (!message.inGuild() || message.author.bot || !message.attachments.size) return;
-            if (!isActive(getGuildConfig(message.guild.id), "logs") || isLogChannel(message.channel)) return;
+            const config = getGuildConfig(message.guild.id);
+            if (!isActive(config, "logs") || config.logTypesOff?.includes("messages") || isLogChannel(message.channel)) return;
             await cacheMessageImages(message);
         },
     },

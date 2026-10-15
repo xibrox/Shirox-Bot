@@ -59,7 +59,7 @@ module.exports = {
       return interaction.reply({ content: 'Welcome messages are *disabled*.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({
-      content: `📢 Channel: <#${config.welcomeChannelId}>\n💬 Message: ${config.welcomeMessage || '*default*'}${config.welcomeOff ? '\n⏸️ Paused' : ''}`,
+      content: `📢 Channel: <#${config.welcomeChannelId}>\n💬 Message: ${config.welcomeMessage || '*default*'}\n🏷️ Title: ${config.welcomeTitle || '*default*'}${config.welcomeOff ? '\n⏸️ Paused' : ''}`,
       flags: MessageFlags.Ephemeral,
     });
   },

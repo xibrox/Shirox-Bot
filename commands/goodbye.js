@@ -59,7 +59,7 @@ module.exports = {
       return interaction.reply({ content: 'Goodbye messages are *disabled*.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({
-      content: `📢 Channel: <#${config.goodbyeChannelId}>\n💬 Message: ${config.goodbyeMessage || '*default*'}${config.goodbyeOff ? '\n⏸️ Paused' : ''}`,
+      content: `📢 Channel: <#${config.goodbyeChannelId}>\n💬 Message: ${config.goodbyeMessage || '*default*'}\n🏷️ Title: ${config.goodbyeTitle || '*default*'}${config.goodbyeOff ? '\n⏸️ Paused' : ''}`,
       flags: MessageFlags.Ephemeral,
     });
   },

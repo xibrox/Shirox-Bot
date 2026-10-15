@@ -1,5 +1,5 @@
 const { mock } = require("bun:test");
-const { Collection, PermissionsBitField, PermissionFlagsBits } = require("discord.js");
+const { Collection, PermissionsBitField, PermissionFlagsBits, ChannelType } = require("discord.js");
 
 let nextId = 0;
 const uniqueId = prefix => `${prefix}${++nextId}`;
@@ -7,6 +7,7 @@ const uniqueId = prefix => `${prefix}${++nextId}`;
 function fakeChannel(id = uniqueId("channel"), botPermissions = PermissionFlagsBits.Administrator) {
     return {
         id,
+        type: ChannelType.GuildText,
         permissionsFor: () => new PermissionsBitField(botPermissions),
         send: mock(async () => {}),
         toString: () => `<#${id}>`,
@@ -29,7 +30,14 @@ function fakeGuild({ botPermissions = PermissionFlagsBits.Administrator, channel
             me: { permissions: new PermissionsBitField(botPermissions), roles: { highest: { position: 100 } } },
             fetch: mock(async () => {}),
         },
-        channels: { cache: new Collection(channels.map(c => [c.id, c])) },
+        channels: {
+            cache: new Collection(channels.map(c => [c.id, c])),
+            fetch: mock(async channelId => {
+                const channel = channels.find(c => c.id === channelId);
+                if (!channel) throw Object.assign(new Error("Unknown Channel"), { code: 10003 });
+                return channel;
+            }),
+        },
         roles: { cache: new Collection(roles.map(r => [r.id, r])) },
     };
 }
