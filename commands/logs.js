@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
+const { missingChannelPermissions, SEND_EMBED_PERMISSIONS } = require('../lib/channelChecks');
 
 module.exports = {
   category: 'setup',
@@ -29,9 +30,8 @@ module.exports = {
     if (sub === 'set') {
       const channel = interaction.options.getChannel('channel');
       const me = interaction.guild.members.me;
-      if (!channel.permissionsFor(me).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, flags: MessageFlags.Ephemeral });
-      }
+      const error = missingChannelPermissions(channel, me, SEND_EMBED_PERMISSIONS);
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
       updateGuildConfig(interaction.guild.id, { logChannelId: channel.id });
       const auditNote = me.permissions.has(PermissionFlagsBits.ViewAuditLog)

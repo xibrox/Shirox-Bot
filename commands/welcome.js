@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = 
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
 const { DEFAULT_WELCOME, PLACEHOLDERS, buildGreetingEmbed } = require('../lib/greetings');
 const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
+const { missingChannelPermissions, SEND_EMBED_PERMISSIONS } = require('../lib/channelChecks');
 
 module.exports = {
   category: 'setup',
@@ -35,10 +36,8 @@ module.exports = {
     if (sub === 'set') {
       const channel = interaction.options.getChannel('channel');
       const message = interaction.options.getString('message');
-      const perms = channel.permissionsFor(interaction.guild.members.me);
-      if (!perms.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-        return interaction.reply({ content: `❌ I need View Channel, Send Messages and Embed Links in ${channel}.`, flags: MessageFlags.Ephemeral });
-      }
+      const error = missingChannelPermissions(channel, interaction.guild.members.me, SEND_EMBED_PERMISSIONS);
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
       // Preview it with the person running the command standing in for the member
       const id = saveDraft({ channelId: channel.id, message });
