@@ -1,6 +1,7 @@
 const { Events, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
 const { EMBED_COLOR } = require("../lib/colors");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { isBlocked } = require("../lib/access");
 
 const DEFAULT_PREFIX = "!";
 
@@ -28,7 +29,7 @@ module.exports = {
     async execute(message) {
         if (message.author.bot) return;
         const prefix = prefixFor(message.guild);
-        if (!message.content.startsWith(prefix)) return;
+        if (!message.content.toLowerCase().startsWith(prefix.toLowerCase())) return;
         const body = message.content.slice(prefix.length);
         const command = body.split(" ")[0].toLowerCase();
         const rest = body.slice(command.length + 1);
@@ -57,6 +58,8 @@ module.exports = {
 
         if (command === "say") {
             if (!message.inGuild()) return;
+            const asInteraction = { guild: message.guild, member: message.member, user: message.author, memberPermissions: message.member.permissions };
+            if (isBlocked(asInteraction, "say")) return message.reply("🔒 You're blocked from using this command here.");
             if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
                 return message.reply("❌ You don’t have permission to use this command.");
             }

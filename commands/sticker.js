@@ -23,6 +23,9 @@ module.exports = {
       return interaction.reply({ content: '❌ Give me a sticker ID/link or attach a file.', flags: MessageFlags.Ephemeral });
     }
 
+    if (file && file.size > 25 * 1024 * 1024) {
+      return interaction.reply({ content: '❌ That file is too large (max 25 MB).', flags: MessageFlags.Ephemeral });
+    }
     // Converting a GIF can take a few seconds
     await interaction.deferReply();
     const result = await addSticker(interaction, {

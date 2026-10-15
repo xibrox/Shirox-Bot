@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ApplicationCommandType, ApplicationCommandOptionType, MessageFlags } = require('discord.js');
 const { EMBED_COLOR } = require('../lib/colors');
+const { hasAccess } = require('../lib/access');
 
 const CATEGORIES = {
   fun: { title: '🎮 Fun', blurb: 'Games and random stuff' },
@@ -13,11 +14,11 @@ const { prefixFor } = require('../events/prefixCommands');
 
 const prefixNote = guild => `Prefix commands also work: ${['quote', 'roll', 'coin', 'choose', 'number', 'say'].map(c => prefixFor(guild) + c).join(' ')}`;
 
-// Members only see commands they have the Discord permissions to use
+// Members only see commands they can use (Discord permissions, or bot mod access)
 function canUse(command, interaction) {
   const required = command.data.default_member_permissions;
   if (!required) return true;
-  return !!interaction.memberPermissions?.has(BigInt(required));
+  return hasAccess(interaction, BigInt(required), command.data.name);
 }
 
 function visibleCommands(interaction, category) {

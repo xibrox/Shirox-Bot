@@ -1,6 +1,6 @@
 const { describe, test, expect } = require("bun:test");
 const { Collection, PermissionFlagsBits: P } = require("discord.js");
-const { hasAccess, isBlocked, COMMAND_KEYS } = require("../lib/access");
+const { hasAccess, isBlocked, COMMAND_GROUPS } = require("../lib/access");
 const setup = require("../commands/setup");
 const mod = require("../commands/mod");
 const { getGuildConfig, updateGuildConfig } = require("../lib/guildConfig");
@@ -54,8 +54,8 @@ describe("access rules", () => {
         expect(hasAccess(interaction, P.BanMembers, "ban")).toBe(true);
     });
 
-    test("every command key fits in one menu", () => {
-        expect(COMMAND_KEYS.length).toBeLessThanOrEqual(25);
+    test("each group of blockable commands fits in one menu", () => {
+        for (const group of Object.values(COMMAND_GROUPS)) expect(group.length).toBeLessThanOrEqual(25);
     });
 });
 
@@ -104,7 +104,7 @@ describe("bot mods section", () => {
         await setup.handleComponent(fakeInteraction({ guild, customId: "setup:botmods:addusers", values: ["u1"] }));
         expect(getGuildConfig(guild.id).botMods).toEqual([{ type: "role", id: "r1", blocked: [] }, { type: "user", id: "u1", blocked: [] }]);
 
-        const block = fakeInteraction({ guild, customId: "setup:botmods:block:r-r1", values: ["ban", "kick"] });
+        const block = fakeInteraction({ guild, customId: "setup:botmods:blockcommands:r-r1", values: ["ban", "kick"] });
         await setup.handleComponent(block);
         expect(getGuildConfig(guild.id).botMods[0].blocked).toEqual(["ban", "kick"]);
         expect(update(block).content).toBe("✅ Blocked 2 command(s).");

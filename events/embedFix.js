@@ -9,10 +9,14 @@ module.exports = {
         if (!message.inGuild() || message.author.bot) return;
         const config = getGuildConfig(message.guild.id);
         if (!config.embedFix || message.channelId === config.honeypotChannelId) return;
+        // Automod deletes links from members without Manage Messages; reposting them would undo that
+        if (config.automodLinks && !message.member?.permissions.has(PermissionFlagsBits.ManageMessages)) return;
 
         const links = fixLinks(message.content, config.embedFixServices);
         if (!links.length) return;
-        await message.reply({ content: links.join("\n"), allowedMentions: { parse: [], repliedUser: false } }).catch(() => {});
+        const replied = await message.reply({ content: links.join("\n"), allowedMentions: { parse: [], repliedUser: false } })
+            .then(() => true, () => false);
+        if (!replied) return;
 
         // Hiding the original embed needs Manage Messages in that channel
         if (config.embedFixHide && message.channel.permissionsFor(message.guild.members.me)?.has(PermissionFlagsBits.ManageMessages)) {

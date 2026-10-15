@@ -11,6 +11,8 @@ const DAY_MS = 86_400_000;
 async function kickIfTooNew(member, config) {
     const minDays = config.automodMinAccountAgeDays;
     if (!minDays || member.user.bot) return false;
+    // People an admin put on the join whitelist were approved on purpose
+    if (config.joinWhitelist && (config.joinWhitelistIds ?? []).includes(member.id)) return false;
     if (Date.now() - member.user.createdTimestamp >= minDays * DAY_MS) return false;
     if (!member.kickable) return false;
 
@@ -33,13 +35,26 @@ async function kickIfTooNew(member, config) {
 // With the join whitelist on, only listed people may join (bots are added by admins, so they pass)
 async function kickIfNotWhitelisted(member, config) {
     if (!config.joinWhitelist || member.user.bot) return false;
-    if ((config.joinWhitelistIds ?? []).includes(member.id) || !member.kickable) return false;
+    if ((config.joinWhitelistIds ?? []).includes(member.id)) return false;
 
-    await member.send(
-        `🔐 **${member.guild.name}** only lets in approved members. Ask a moderator to add you, then join again.`,
-    ).catch(() => {});
-    suppressLogsFor(member.id);
-    await member.kick("Join whitelist: not on the list").catch(() => {});
+    let kicked = false;
+    if (member.kickable) {
+        await member.send(
+            `🔐 **${member.guild.name}** only lets in approved members. Ask a moderator to add you, then join again.`,
+        ).catch(() => {});
+        suppressLogsFor(member.id);
+        kicked = await member.kick("Join whitelist: not on the list").then(() => true, () => false);
+    }
+    if (!kicked) {
+        // Let them in, but make sure staff notice the whitelist isn't working
+        const warning = createLogEmbed("warning", "⚠️ Join whitelist couldn't kick someone")
+            .addFields(
+                { name: "User", value: userField(member.user) },
+                { name: "Fix", value: "Give me **Kick Members** and move my role above theirs." },
+            );
+        await sendLog(member.guild, "moderation", warning);
+        return false;
+    }
     recordAction(member.guild.id, { type: "kick", targetId: member.id, moderatorId: member.client?.user.id ?? null, reason: "Not on the join whitelist" });
 
     const embed = createLogEmbed("danger", "🔐 Not on the join whitelist")

@@ -20,13 +20,15 @@ setInterval(() => {
 }, 60_000).unref();
 
 // An invite to another server that isn't on this server's allowlist
+// Whether any invite in the message leads to another server that isn't on this server's allowlist
 async function isForeignInvite(message, config) {
-    const code = message.content.match(INVITE_REGEX)?.[1];
-    if (!code) return false;
-    const invite = await message.client.fetchInvite(code).catch(() => null);
-    const target = invite?.guild?.id;
-    if (target === message.guild.id) return false;
-    return !(config.automodInviteAllow ?? []).some(server => server.id === target);
+    const codes = [...new Set([...message.content.matchAll(new RegExp(INVITE_REGEX.source, "gi"))].map(m => m[1]))];
+    for (const code of codes) {
+        const invite = await message.client.fetchInvite(code).catch(() => null);
+        const target = invite?.guild?.id;
+        if (target !== message.guild.id && !(config.automodInviteAllow ?? []).some(server => server.id === target)) return true;
+    }
+    return false;
 }
 
 async function punish(message, rule, { timeoutMs, messages = [message] } = {}) {
