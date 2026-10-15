@@ -18,13 +18,16 @@ function canUse(command, interaction) {
   return !!interaction.memberPermissions?.has(BigInt(required));
 }
 
-// Modules that are also entries of a group command (/setup, /mod) are listed inside that group instead
-function groupedModules(client) {
-  return new Set([...client.commands.values()].flatMap(c => Object.values(c.entries || {})));
+// Modules that are also entries of a group command (/setup, /mod) are listed inside that group instead,
+// unless the member can't see the group (e.g. Manage Messages without Timeout Members still gets /purge)
+function groupedModules(interaction) {
+  return new Set([...interaction.client.commands.values()]
+    .filter(c => c.entries && canUse(c, interaction))
+    .flatMap(c => Object.values(c.entries)));
 }
 
 function visibleCommands(interaction, category) {
-  const grouped = groupedModules(interaction.client);
+  const grouped = groupedModules(interaction);
   return [...interaction.client.commands.values()]
     .filter(c => c.category === category && !grouped.has(c) && canUse(c, interaction))
     .sort((a, b) => a.data.name.localeCompare(b.data.name));
@@ -84,6 +87,11 @@ function categoryEmbeds(interaction, category) {
   });
 }
 
+// Each usable entry of a group command counts as its own command
+function commandCount(interaction, category) {
+  return visibleCommands(interaction, category).reduce((n, c) => n + (c.entries ? describe(c, interaction).length : 1), 0);
+}
+
 function availableCategories(interaction) {
   return Object.keys(CATEGORIES).filter(c => visibleCommands(interaction, c).length);
 }
@@ -111,7 +119,7 @@ function overviewEmbed(interaction) {
     .setDescription('Pick a category from the menu below, or use `/help [category]`.')
     .addFields(categories.map(c => ({
       name: CATEGORIES[c].title,
-      value: `${CATEGORIES[c].blurb}\n${visibleCommands(interaction, c).length} commands`,
+      value: `${CATEGORIES[c].blurb}\n${commandCount(interaction, c)} commands`,
       inline: true,
     })))
     .setFooter({ text: PREFIX_NOTE });
@@ -121,6 +129,7 @@ module.exports = {
   category: 'utility',
   visibleCommands,
   describe,
+  commandCount,
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Shows all available commands')

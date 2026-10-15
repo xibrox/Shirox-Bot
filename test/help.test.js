@@ -7,9 +7,10 @@ const mod = require("../commands/mod");
 const welcome = require("../commands/welcome");
 const ban = require("../commands/ban");
 const ping = require("../commands/ping");
+const purge = require("../commands/purge");
 
 function fakeInteraction(permissions) {
-    const commands = new Collection([setup, mod, welcome, ban, ping].map(c => [c.data.name, c]));
+    const commands = new Collection([setup, mod, welcome, ban, ping, purge].map(c => [c.data.name, c]));
     return { client: { commands }, memberPermissions: new PermissionsBitField(permissions) };
 }
 
@@ -37,6 +38,17 @@ group("help with group commands", () => {
         const text = help.describe(mod, fakeInteraction(PermissionFlagsBits.Administrator)).join("\n\n");
         expect(text).toContain("`/mod ban <user> [reason] [delete_messages]`");
         expect(text).toContain("Shortcut: `/ban`");
+    });
+
+    test("lists a grouped command on its own when the member can't see its group", () => {
+        const names = help.visibleCommands(fakeInteraction(PermissionFlagsBits.ManageMessages), "moderation").map(c => c.data.name);
+        expect(names).toContain("purge");
+        expect(names).not.toContain("mod");
+    });
+
+    test("counts each usable group entry as a command", () => {
+        expect(help.commandCount(fakeInteraction(PermissionFlagsBits.Administrator), "moderation")).toBe(13);
+        expect(help.commandCount(fakeInteraction(PermissionFlagsBits.ManageMessages), "moderation")).toBe(1);
     });
 
     test("hides entries the member lacks permission for", () => {
