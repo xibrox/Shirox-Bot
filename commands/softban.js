@@ -50,6 +50,6 @@ module.exports = {
         { name: 'Moderator', value: userField(interaction.user) },
         { name: 'Reason', value: reason },
       );
-    await sendLog(interaction.guild, embed);
+    await sendLog(interaction.guild, 'moderation', embed);
   },
 };

@@ -53,7 +53,7 @@ async function punish(message, rule, { timeoutMs, messages = [message] } = {}) {
             { name: "Message", value: truncate(message.content) },
         );
     if (timedOut) embed.addFields({ name: "Action", value: `Timed out for ${timeoutMs / 60_000}m` });
-    await sendLog(message.guild, embed);
+    await sendLog(message.guild, "moderation", embed);
 }
 
 module.exports = {

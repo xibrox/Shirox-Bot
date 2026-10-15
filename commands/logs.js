@@ -33,7 +33,7 @@ module.exports = {
       const error = missingChannelPermissions(channel, me, SEND_EMBED_PERMISSIONS);
       if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
-      updateGuildConfig(interaction.guild.id, { logChannelId: channel.id });
+      updateGuildConfig(interaction.guild.id, { logChannelId: channel.id, logsOff: null });
       const auditNote = me.permissions.has(PermissionFlagsBits.ViewAuditLog)
         ? ''
         : '\n⚠️ Give me **View Audit Log** so logs can show who banned/kicked/timed out someone.';
@@ -41,13 +41,13 @@ module.exports = {
     }
 
     if (sub === 'disable') {
-      updateGuildConfig(interaction.guild.id, { logChannelId: null });
+      updateGuildConfig(interaction.guild.id, { logChannelId: null, logsOff: null, logTypesOff: null });
       return interaction.reply({ content: '✅ Logging disabled.', flags: MessageFlags.Ephemeral });
     }
 
-    const { logChannelId } = getGuildConfig(interaction.guild.id);
+    const { logChannelId, logsOff } = getGuildConfig(interaction.guild.id);
     await interaction.reply({
-      content: logChannelId ? `📜 Logs are sent to <#${logChannelId}>.` : 'Logging is *disabled*.',
+      content: logChannelId ? `📜 Logs are sent to <#${logChannelId}>.${logsOff ? ' ⏸️ Paused.' : ''}` : 'Logging is *disabled*.',
       flags: MessageFlags.Ephemeral,
     });
   },

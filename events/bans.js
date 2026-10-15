@@ -12,7 +12,7 @@ async function logBan(ban, added) {
         .addFields({ name: "User", value: userField(ban.user) });
     if (entry) embed.addFields({ name: "Moderator", value: userField(entry.executor) });
     if (added) embed.addFields({ name: "Reason", value: entry?.reason || ban.reason || "No reason provided" });
-    await sendLog(ban.guild, embed);
+    await sendLog(ban.guild, "moderation", embed);
 }
 
 module.exports = [

@@ -1,5 +1,6 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { isActive } = require("../lib/features");
 const { DEFAULT_GOODBYE, sendGreeting } = require("../lib/greetings");
 const { saveMemberRoles } = require("../lib/savedRoles");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField, isSuppressed } = require("../lib/logger");
@@ -15,7 +16,7 @@ module.exports = {
 
         const config = getGuildConfig(member.guild.id);
         const saved = config.restoreRoles && !member.partial ? saveMemberRoles(member) : null;
-        if (config.goodbyeChannelId) {
+        if (isActive(config, "goodbye")) {
             const template = config.goodbyeMessage || DEFAULT_GOODBYE;
             await sendGreeting(member, config.goodbyeChannelId, template, false);
         }
@@ -42,6 +43,6 @@ module.exports = {
             embed.addFields({ name: "♻️ Saved for restore", value: lines.join("\n").slice(0, 1024) });
         }
 
-        await sendLog(member.guild, embed);
+        await sendLog(member.guild, kick ? "moderation" : "members", embed);
     },
 };

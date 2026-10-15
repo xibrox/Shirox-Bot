@@ -50,7 +50,7 @@ module.exports = {
     }
 
     if (sub === 'disable') {
-      updateGuildConfig(interaction.guild.id, { welcomeChannelId: null, welcomeMessage: null });
+      updateGuildConfig(interaction.guild.id, { welcomeChannelId: null, welcomeMessage: null, welcomeTitle: null, welcomeOff: null });
       return interaction.reply({ content: '✅ Welcome messages disabled.', flags: MessageFlags.Ephemeral });
     }
 
@@ -59,7 +59,7 @@ module.exports = {
       return interaction.reply({ content: 'Welcome messages are *disabled*.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({
-      content: `📢 Channel: <#${config.welcomeChannelId}>\n💬 Message: ${config.welcomeMessage || '*default*'}`,
+      content: `📢 Channel: <#${config.welcomeChannelId}>\n💬 Message: ${config.welcomeMessage || '*default*'}${config.welcomeOff ? '\n⏸️ Paused' : ''}`,
       flags: MessageFlags.Ephemeral,
     });
   },
@@ -72,7 +72,7 @@ module.exports = {
     dropDraft(id);
     if (action === 'cancel') return interaction.update(closePreview('Cancelled, nothing was changed.'));
 
-    updateGuildConfig(interaction.guild.id, { welcomeChannelId: draft.channelId, welcomeMessage: draft.message });
+    updateGuildConfig(interaction.guild.id, { welcomeChannelId: draft.channelId, welcomeMessage: draft.message, welcomeOff: null });
     await interaction.update(closePreview(`✅ Welcome messages will be sent in <#${draft.channelId}>.\nPlaceholders: ${PLACEHOLDERS}`));
   },
 };

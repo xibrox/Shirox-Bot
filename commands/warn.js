@@ -34,6 +34,6 @@ module.exports = {
         { name: 'Reason', value: reason },
         { name: 'Total warnings', value: `${warnings.length}`, inline: true },
       );
-    await sendLog(interaction.guild, embed);
+    await sendLog(interaction.guild, 'moderation', embed);
   },
 };

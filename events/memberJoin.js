@@ -1,5 +1,6 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { isActive } = require("../lib/features");
 const { DEFAULT_WELCOME, sendGreeting } = require("../lib/greetings");
 const { restoreMemberRoles } = require("../lib/savedRoles");
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require("../lib/logger");
@@ -24,7 +25,7 @@ async function kickIfTooNew(member, config) {
             { name: "User", value: userField(member.user) },
             { name: "Account created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>` },
         );
-    await sendLog(member.guild, embed);
+    await sendLog(member.guild, "moderation", embed);
     return true;
 }
 
@@ -39,7 +40,7 @@ async function restoreRoles(member, config) {
     const embed = createLogEmbed("success", "♻️ Roles restored").addFields({ name: "User", value: userField(member.user) });
     if (result.restored.length) embed.addFields({ name: "Roles", value: result.restored.map(r => `${r}`).join(" ").slice(0, 1024) });
     if (result.nickname) embed.addFields({ name: "Nickname", value: result.nickname });
-    await sendLog(member.guild, embed);
+    await sendLog(member.guild, "members", embed);
 }
 
 async function giveAutoRole(member, config) {
@@ -55,12 +56,13 @@ async function giveAutoRole(member, config) {
 }
 
 async function sendWelcome(member, config) {
-    if (!config.welcomeChannelId) return;
+    if (!isActive(config, "welcome")) return;
     const template = config.welcomeMessage || DEFAULT_WELCOME;
     await sendGreeting(member, config.welcomeChannelId, template, true);
 }
 
 module.exports = {
+    sendWelcome,
     name: Events.GuildMemberAdd,
     async execute(member) {
         const config = getGuildConfig(member.guild.id);
@@ -82,6 +84,6 @@ module.exports = {
                 },
                 { name: "Member count", value: `${member.guild.memberCount}`, inline: true },
             );
-        await sendLog(member.guild, embed);
+        await sendLog(member.guild, "members", embed);
     },
 };

@@ -10,6 +10,7 @@ function fakeChannel(id = uniqueId("channel"), botPermissions = PermissionFlagsB
         permissionsFor: () => new PermissionsBitField(botPermissions),
         send: mock(async () => {}),
         toString: () => `<#${id}>`,
+        isTextBased: () => true,
     };
 }
 
@@ -42,6 +43,8 @@ function fakeInteraction({ guild = fakeGuild(), permissions = PermissionFlagsBit
         member: { roles: { highest: { position: 50 } } },
         memberPermissions: new PermissionsBitField(permissions),
         channel: fakeChannel("here"),
+        channelId: "here",
+        client: { user: { id: "bot" } },
         fields: { getTextInputValue: name => fields[name] ?? "" },
         replied: false,
         deferred: false,

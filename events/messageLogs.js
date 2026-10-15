@@ -1,5 +1,6 @@
 const { Events, AttachmentBuilder } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { isActive } = require("../lib/features");
 const { createLogEmbed, sendLog, truncate, userField, isSuppressed } = require("../lib/logger");
 const { cacheMessageImages, takeDeletedImages, forgetMessage } = require("../lib/attachmentCache");
 
@@ -19,7 +20,7 @@ module.exports = [
         name: Events.MessageCreate,
         async execute(message) {
             if (!message.inGuild() || message.author.bot || !message.attachments.size) return;
-            if (!getGuildConfig(message.guild.id).logChannelId || isLogChannel(message.channel)) return;
+            if (!isActive(getGuildConfig(message.guild.id), "logs") || isLogChannel(message.channel)) return;
             await cacheMessageImages(message);
         },
     },
@@ -57,7 +58,7 @@ module.exports = [
             if (files.length) embed.setImage(`attachment://${files[0].name}`);
             if (files.length > 1) embed.setFooter({ text: `${files.length} images attached below` });
 
-            await sendLog(message.guild, embed, files);
+            await sendLog(message.guild, "messages", embed, files);
         },
     },
     {
@@ -84,7 +85,7 @@ module.exports = [
             const files = transcript
                 ? [new AttachmentBuilder(Buffer.from(transcript, "utf-8"), { name: `deleted-${channel.name}.txt` })]
                 : [];
-            await sendLog(channel.guild, embed, files);
+            await sendLog(channel.guild, "messages", embed, files);
         },
     },
     {
@@ -102,7 +103,7 @@ module.exports = [
                     { name: "Before", value: truncate(oldMessage.content) },
                     { name: "After", value: truncate(newMessage.content) },
                 );
-            await sendLog(newMessage.guild, embed);
+            await sendLog(newMessage.guild, "messages", embed);
         },
     },
 ];

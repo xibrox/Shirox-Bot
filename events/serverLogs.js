@@ -21,7 +21,7 @@ module.exports = [
                 );
             }
             embed.addFields({ name: "User", value: userField(member.user) });
-            await sendLog(newState.guild, embed);
+            await sendLog(newState.guild, "voice", embed);
         },
     },
     {
@@ -30,7 +30,7 @@ module.exports = [
             if (!channel.guild) return;
             const embed = createLogEmbed("success", "📁 Channel created")
                 .addFields({ name: "Channel", value: `${channel} (\`${channel.name}\`, ${ChannelType[channel.type]})` });
-            await sendLog(channel.guild, embed);
+            await sendLog(channel.guild, "server", embed);
         },
     },
     {
@@ -39,21 +39,21 @@ module.exports = [
             if (!channel.guild) return;
             const embed = createLogEmbed("danger", "🗑️ Channel deleted")
                 .addFields({ name: "Channel", value: `\`#${channel.name}\` (${ChannelType[channel.type]})` });
-            await sendLog(channel.guild, embed);
+            await sendLog(channel.guild, "server", embed);
         },
     },
     {
         name: Events.GuildRoleCreate,
         async execute(role) {
             const embed = createLogEmbed("success", "🎭 Role created").addFields({ name: "Role", value: `${role} (\`${role.name}\`)` });
-            await sendLog(role.guild, embed);
+            await sendLog(role.guild, "server", embed);
         },
     },
     {
         name: Events.GuildRoleDelete,
         async execute(role) {
             const embed = createLogEmbed("danger", "🗑️ Role deleted").addFields({ name: "Role", value: `\`${role.name}\`` });
-            await sendLog(role.guild, embed);
+            await sendLog(role.guild, "server", embed);
         },
     },
 ];

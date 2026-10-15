@@ -45,7 +45,7 @@ module.exports = {
       const error = honeypotError(interaction.guild, channel, action);
       if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
-      updateGuildConfig(interaction.guild.id, { honeypotChannelId: channel.id, honeypotAction: action });
+      updateGuildConfig(interaction.guild.id, { honeypotChannelId: channel.id, honeypotAction: action, honeypotOff: null });
       if (postWarning) await channel.send({ embeds: [honeypotWarningEmbed(action)] }).catch(() => {});
 
       return interaction.reply({
@@ -56,14 +56,14 @@ module.exports = {
     }
 
     if (sub === 'disable') {
-      updateGuildConfig(interaction.guild.id, { honeypotChannelId: null, honeypotAction: null });
+      updateGuildConfig(interaction.guild.id, { honeypotChannelId: null, honeypotAction: null, honeypotOff: null, honeypotWarningTitle: null, honeypotWarningText: null });
       return interaction.reply({ content: '✅ Honeypot disabled.', flags: MessageFlags.Ephemeral });
     }
 
     const config = getGuildConfig(interaction.guild.id);
     await interaction.reply({
       content: config.honeypotChannelId
-        ? `🍯 Channel: <#${config.honeypotChannelId}>\nAction: **${ACTION_LABELS[config.honeypotAction || 'softban']}**`
+        ? `🍯 Channel: <#${config.honeypotChannelId}>\nAction: **${ACTION_LABELS[config.honeypotAction || 'softban']}**${config.honeypotOff ? '\n⏸️ Paused' : ''}`
         : 'The honeypot is *disabled*.',
       flags: MessageFlags.Ephemeral,
     });

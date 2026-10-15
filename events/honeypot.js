@@ -1,5 +1,6 @@
 const { Events, PermissionFlagsBits } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
+const { isActive } = require("../lib/features");
 const { softban } = require("../lib/moderation");
 const { createLogEmbed, sendLog, truncate, userField, suppressLogsFor } = require("../lib/logger");
 
@@ -11,7 +12,7 @@ module.exports = {
     async execute(message) {
         if (!message.inGuild() || message.author.bot) return;
         const config = getGuildConfig(message.guild.id);
-        if (!config.honeypotChannelId || message.channelId !== config.honeypotChannelId) return;
+        if (!isActive(config, "honeypot") || message.channelId !== config.honeypotChannelId) return;
 
         const member = message.member;
         if (!member || member.id === message.guild.ownerId) return;
@@ -56,6 +57,6 @@ module.exports = {
             setTimeout(() => inProgress.delete(member.id), 30_000);
         }
 
-        await sendLog(message.guild, embed);
+        await sendLog(message.guild, "moderation", embed);
     },
 };

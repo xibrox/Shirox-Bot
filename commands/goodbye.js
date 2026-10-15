@@ -50,7 +50,7 @@ module.exports = {
     }
 
     if (sub === 'disable') {
-      updateGuildConfig(interaction.guild.id, { goodbyeChannelId: null, goodbyeMessage: null });
+      updateGuildConfig(interaction.guild.id, { goodbyeChannelId: null, goodbyeMessage: null, goodbyeTitle: null, goodbyeOff: null });
       return interaction.reply({ content: '✅ Goodbye messages disabled.', flags: MessageFlags.Ephemeral });
     }
 
@@ -59,7 +59,7 @@ module.exports = {
       return interaction.reply({ content: 'Goodbye messages are *disabled*.', flags: MessageFlags.Ephemeral });
     }
     await interaction.reply({
-      content: `📢 Channel: <#${config.goodbyeChannelId}>\n💬 Message: ${config.goodbyeMessage || '*default*'}`,
+      content: `📢 Channel: <#${config.goodbyeChannelId}>\n💬 Message: ${config.goodbyeMessage || '*default*'}${config.goodbyeOff ? '\n⏸️ Paused' : ''}`,
       flags: MessageFlags.Ephemeral,
     });
   },
@@ -72,7 +72,7 @@ module.exports = {
     dropDraft(id);
     if (action === 'cancel') return interaction.update(closePreview('Cancelled, nothing was changed.'));
 
-    updateGuildConfig(interaction.guild.id, { goodbyeChannelId: draft.channelId, goodbyeMessage: draft.message });
+    updateGuildConfig(interaction.guild.id, { goodbyeChannelId: draft.channelId, goodbyeMessage: draft.message, goodbyeOff: null });
     await interaction.update(closePreview(`✅ Goodbye messages will be sent in <#${draft.channelId}>.\nPlaceholders: ${PLACEHOLDERS}`));
   },
 };

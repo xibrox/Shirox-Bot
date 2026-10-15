@@ -14,7 +14,7 @@ module.exports = {
                     { name: "Before", value: oldMember.nickname || "*none*", inline: true },
                     { name: "After", value: newMember.nickname || "*none*", inline: true },
                 );
-            await sendLog(guild, embed);
+            await sendLog(guild, "members", embed);
         }
 
         const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
@@ -23,7 +23,7 @@ module.exports = {
             const embed = createLogEmbed("update", "🎭 Roles updated").addFields({ name: "User", value: userField(newMember.user) });
             if (added.size) embed.addFields({ name: "Added", value: added.map(r => `${r}`).join(" ") });
             if (removed.size) embed.addFields({ name: "Removed", value: removed.map(r => `${r}`).join(" ") });
-            await sendLog(guild, embed);
+            await sendLog(guild, "members", embed);
         }
 
         const oldTimeout = oldMember.communicationDisabledUntilTimestamp;
@@ -36,7 +36,7 @@ module.exports = {
             if (isTimedOut) embed.addFields({ name: "Until", value: `<t:${Math.floor(newTimeout / 1000)}:F>` });
             if (entry) embed.addFields({ name: "Moderator", value: userField(entry.executor) });
             if (isTimedOut && entry?.reason) embed.addFields({ name: "Reason", value: entry.reason });
-            await sendLog(guild, embed);
+            await sendLog(guild, "moderation", embed);
         }
     },
 };
