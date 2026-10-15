@@ -19,11 +19,14 @@ setInterval(() => {
     }
 }, 60_000).unref();
 
-async function isForeignInvite(message) {
+// An invite to another server that isn't on this server's allowlist
+async function isForeignInvite(message, config) {
     const code = message.content.match(INVITE_REGEX)?.[1];
     if (!code) return false;
     const invite = await message.client.fetchInvite(code).catch(() => null);
-    return invite?.guild?.id !== message.guild.id;
+    const target = invite?.guild?.id;
+    if (target === message.guild.id) return false;
+    return !(config.automodInviteAllow ?? []).some(server => server.id === target);
 }
 
 async function punish(message, rule, { timeoutMs, messages = [message] } = {}) {
@@ -71,7 +74,7 @@ module.exports = {
             }
         }
 
-        if (config.automodInvites && await isForeignInvite(message)) {
+        if (config.automodInvites && await isForeignInvite(message, config)) {
             return punish(message, "Invite links are not allowed");
         }
 

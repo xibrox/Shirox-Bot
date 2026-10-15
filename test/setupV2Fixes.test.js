@@ -41,7 +41,7 @@ test("every form the dashboard opens fits Discord's limits", async () => {
     savePanel(guild.id, { messageId: "m1", channelId: "c1", title: "T", description: "D", roleIds: [] });
     const { draftId } = await newDraft(guild);
     const ids = [
-        "setup:welcome:text", "setup:goodbye:text", "setup:honeypot:text", "setup:automod:limits",
+        "setup:welcome:text", "setup:goodbye:text", "setup:honeypot:text", "setup:automod:limits", "setup:automod:allow",
         "setup:faq:add", `setup:faq:edit:${faq.id}`, "setup:faq:paneltext",
         "setup:selfroles:adopt", `setup:selfroles:newtext:${draftId}`, "setup:selfroles:text:m1",
     ];
