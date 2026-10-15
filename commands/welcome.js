@@ -43,7 +43,7 @@ module.exports = {
       const id = saveDraft({ channelId: channel.id, message });
       return interaction.reply({
         content: `**Preview** of the welcome message for ${channel}. Save it?`,
-        embeds: [buildGreetingEmbed(interaction.member, message || DEFAULT_WELCOME, true)],
+        embeds: [buildGreetingEmbed(interaction.member, message || DEFAULT_WELCOME, true, getGuildConfig(interaction.guild.id).welcomeTitle)],
         components: [previewButtons('welcome', id, { confirm: 'Save', edit: false })],
         flags: MessageFlags.Ephemeral,
       });

@@ -58,7 +58,7 @@ async function giveAutoRole(member, config) {
 async function sendWelcome(member, config) {
     if (!isActive(config, "welcome")) return;
     const template = config.welcomeMessage || DEFAULT_WELCOME;
-    await sendGreeting(member, config.welcomeChannelId, template, true);
+    await sendGreeting(member, config.welcomeChannelId, template, true, config.welcomeTitle);
 }
 
 module.exports = {

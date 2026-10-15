@@ -18,7 +18,7 @@ module.exports = {
         const saved = config.restoreRoles && !member.partial ? saveMemberRoles(member) : null;
         if (isActive(config, "goodbye")) {
             const template = config.goodbyeMessage || DEFAULT_GOODBYE;
-            await sendGreeting(member, config.goodbyeChannelId, template, false);
+            await sendGreeting(member, config.goodbyeChannelId, template, false, config.goodbyeTitle);
         }
 
         const kick = await findAuditEntry(member.guild, AuditLogEvent.MemberKick, member.id);

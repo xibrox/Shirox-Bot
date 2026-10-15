@@ -43,7 +43,7 @@ module.exports = {
       const id = saveDraft({ channelId: channel.id, message });
       return interaction.reply({
         content: `**Preview** of the goodbye message for ${channel}. Save it?`,
-        embeds: [buildGreetingEmbed(interaction.member, message || DEFAULT_GOODBYE, false)],
+        embeds: [buildGreetingEmbed(interaction.member, message || DEFAULT_GOODBYE, false, getGuildConfig(interaction.guild.id).goodbyeTitle)],
         components: [previewButtons('goodbye', id, { confirm: 'Save', edit: false })],
         flags: MessageFlags.Ephemeral,
       });
