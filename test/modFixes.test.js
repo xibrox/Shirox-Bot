@@ -16,7 +16,8 @@ describe("channel tools check the target channel", () => {
         const other = fakeTextChannel("other");
         const guild = fakeGuild({ channels: [other] });
         const make = (customId, fields) => {
-            const interaction = fakeInteraction({ guild, customId, fields });
+            // Not an admin: admins have every permission in every channel anyway
+            const interaction = fakeInteraction({ guild, customId, fields, permissions: P.ManageMessages | P.ManageChannels | P.ModerateMembers });
             other.permissionsFor = who => new PermissionsBitField(who === interaction.member ? 0n : P.Administrator);
             return interaction;
         };

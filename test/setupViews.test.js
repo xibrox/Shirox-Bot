@@ -13,6 +13,7 @@ const FILLED = {
     automodMinAccountAgeDays: 7, honeypotChannelId: "c4", honeypotAction: "ban", autoRoleId: "r1", botAutoRoleId: "r2",
     restoreRoles: true,
     joinWhitelist: true,
+    botMods: Array.from({ length: 25 }, (_, i) => ({ type: i % 2 ? "role" : "user", id: `${700000000000000000 + i}`, blocked: ["ban", "kick"] })),
     embedFix: true,
     embedFixHide: true,
     embedFixServices: { twitter: "vxtwitter.com", tiktok: "off" },

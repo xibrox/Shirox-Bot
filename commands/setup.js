@@ -4,10 +4,13 @@ const { getGuildConfig } = require('../lib/guildConfig');
 const { permissionNames, listText } = require('../lib/permissions');
 const { SECTIONS } = require('../lib/setup/sections');
 const { guardSlowReply } = require('../lib/slowReply');
+const { hasAccess, isBlocked } = require('../lib/access');
 
 const OUT_OF_DATE = { content: '⚠️ This dashboard is out of date. Run /setup again.', flags: MessageFlags.Ephemeral };
 
-const canOpen = (section, interaction) => !!interaction.memberPermissions?.has(section.permission);
+// Bot mods can open sections too (lib/access.js); `command` is what they can be blocked from
+const canOpen = (section, interaction) =>
+  !isBlocked(interaction, 'setup') && hasAccess(interaction, section.permission, section.command ?? 'setup');
 const visibleSections = interaction => SECTIONS.filter(section => canOpen(section, interaction));
 
 const permissionReply = section => ({

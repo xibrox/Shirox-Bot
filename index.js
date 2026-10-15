@@ -12,6 +12,7 @@ const {
 } = require("discord.js");
 const { getGuildConfig } = require("./lib/guildConfig");
 const { isOwner } = require("./lib/owner");
+const { COMMAND_KEYS, isBlocked } = require("./lib/access");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,6 +104,10 @@ client.on(Events.InteractionCreate, async interaction => {
                 content: "❌ I'm not actually in this server, only my commands are. Re-invite me with `/invite` so I can work here.",
                 flags: MessageFlags.Ephemeral,
             });
+        }
+        // Bot mods can be blocked from commands in /setup → Bot mods, even if Discord lets them run it
+        if (interaction.inGuild() && COMMAND_KEYS.includes(command.data.name) && isBlocked(interaction, command.data.name)) {
+            return await interaction.reply({ content: "🔒 You're blocked from using this command here.", flags: MessageFlags.Ephemeral });
         }
         await command.execute(interaction);
     } catch (error) {
