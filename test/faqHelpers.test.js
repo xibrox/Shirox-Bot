@@ -14,3 +14,9 @@ test("the edit form is prefilled", () => {
     expect(json.components[0].components[0].value).toBe("Q?");
     expect(json.components[1].components[0].value).toBe("A.");
 });
+
+test("the panel uses custom title and text", () => {
+    const json = faqPanel([{ id: 1, question: "Q?" }], { title: "Help", text: "Choose one:" }).embeds[0].toJSON();
+    expect(json.title).toBe("Help");
+    expect(json.description).toBe("Choose one:\n\n• Q?");
+});

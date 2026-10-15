@@ -12,7 +12,7 @@ describe("FAQ section", () => {
         const faq = addFaq(interaction.guild.id, "How?", "Like this.");
         interaction.values = [String(faq.id)];
         await setup.handleComponent(interaction);
-        const [, edit, remove] = lastRow(update(interaction));
+        const [, edit, remove] = update(interaction).components.at(-2).toJSON().components;
         expect(edit).toMatchObject({ custom_id: `setup:faq:edit:${faq.id}`, disabled: false });
         expect(remove).toMatchObject({ custom_id: `setup:faq:remove:${faq.id}`, disabled: false });
     });
@@ -59,6 +59,18 @@ describe("FAQ section", () => {
         await setup.handleComponent(interaction);
         expect(channel.send).not.toHaveBeenCalled();
         expect(update(interaction).content).toBe("❌ Add some questions first.");
+    });
+    test("Panel text saves and Preview panel uses it", async () => {
+        const guild = fakeGuild();
+        addFaq(guild.id, "How?", "Like this.");
+        const save = fakeInteraction({ guild, customId: "setup:faq:paneltext", fields: { title: "Help", text: "Pick:" } });
+        await setup.handleModal(save);
+        expect(update(save).content).toBe("✅ Panel text saved.");
+
+        const preview = fakeInteraction({ guild, customId: "setup:faq:previewpanel" });
+        await setup.handleComponent(preview);
+        const reply = preview.reply.mock.calls[0][0];
+        expect(reply.embeds[0].toJSON()).toMatchObject({ title: "Help", description: "Pick:\n\n• How?" });
     });
 });
 

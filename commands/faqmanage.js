@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
-const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices, faqModal, faqPanel } = require('../lib/faq');
+const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices, faqModal, savedFaqPanel } = require('../lib/faq');
 const { faqEmbed } = require('./faq');
 const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
 
@@ -52,7 +52,7 @@ module.exports = {
     const channel = interaction.options.getChannel('channel') || interaction.channel;
 
     try {
-      await channel.send(faqPanel(faqs));
+      await channel.send(savedFaqPanel(guildId, faqs));
       const note = faqs.length > 25 ? '\n⚠️ Only the first 25 questions fit in a dropdown.' : '';
       await interaction.reply({ content: `✅ FAQ panel posted in ${channel}.${note}`, flags: MessageFlags.Ephemeral });
     } catch {

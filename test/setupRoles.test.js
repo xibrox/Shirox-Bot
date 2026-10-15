@@ -45,6 +45,11 @@ describe("auto role section", () => {
         const payload = setup.homeView(fakeInteraction({ permissions: P.ManageGuild }));
         expect(payload.components[0].toJSON().components[0].options.map(o => o.value)).not.toContain("autorole");
     });
+    test("its clear buttons are named Disable for members/bots", () => {
+        const autorole = require("../lib/setup/sections/autorole");
+        const labels = autorole.view(fakeInteraction()).components.at(-1).toJSON().components.map(c => c.label);
+        expect(labels).toEqual(["Disable for members", "Disable for bots", "◀ Home"]);
+    });
 });
 
 describe("role restore section", () => {
