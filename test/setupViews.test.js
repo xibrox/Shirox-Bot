@@ -16,7 +16,8 @@ const FILLED = {
     botMods: Array.from({ length: 25 }, (_, i) => ({ type: i % 2 ? "role" : "user", id: `${700000000000000000 + i}`, blocked: ["ban", "kick"] })),
     embedFix: true,
     embedFixHide: true,
-    embedFixServices: { twitter: "vxtwitter.com", tiktok: "off" },
+    embedFixOrder: { twitter: ["vxtwitter.com"] },
+    embedFixOff: ["tiktok"],
     joinWhitelistIds: Array.from({ length: 40 }, (_, i) => `${800000000000000000 + i}`),
     automodInviteAllow: Array.from({ length: 25 }, (_, i) => ({ id: `${900000000000000000 + i}`, name: `Server ${"n".repeat(120)}` })),
 };

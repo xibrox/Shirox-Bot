@@ -52,9 +52,12 @@ if (fs.existsSync(commandsPath)) {
 }
 
 // ===== Event Loader (logging, honeypot, automod, joins) =====
+// Events can also own buttons/menus on the messages they post ("<componentPrefix>:<data>")
+const componentHandlers = new Map();
 const eventsPath = path.join(__dirname, "events");
 for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"))) {
     for (const event of [].concat(require(path.join(eventsPath, file)))) {
+        if (event.componentPrefix) componentHandlers.set(event.componentPrefix, event);
         const run = (...args) => event.execute(...args).catch(err => console.error(`Error in ${file} (${event.name}):`, err));
         if (event.once) client.once(event.name, run);
         else client.on(event.name, run);
@@ -83,7 +86,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (interaction.isMessageComponent() || interaction.isModalSubmit()) {
             const prefix = interaction.customId.split(":")[0];
-            const command = client.commands.get(COMPONENT_ALIASES[prefix] ?? prefix);
+            const command = client.commands.get(COMPONENT_ALIASES[prefix] ?? prefix) ?? componentHandlers.get(prefix);
             if (command?.ownerOnly && !isOwner(interaction.user.id)) return await interaction.reply(OWNER_ONLY_REPLY);
             const handler = interaction.isModalSubmit() ? command?.handleModal : command?.handleComponent;
             if (handler) await handler.call(command, interaction);
