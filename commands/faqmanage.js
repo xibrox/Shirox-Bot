@@ -1,27 +1,7 @@
-const {
-  SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType,
-  ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder,
-  MessageFlags,
-} = require('discord.js');
-const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices } = require('../lib/faq');
-const { EMBED_COLOR } = require('../lib/colors');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { getFaqs, findFaq, addFaq, updateFaq, removeFaq, faqChoices, faqModal, faqPanel } = require('../lib/faq');
 const { faqEmbed } = require('./faq');
 const { saveDraft, getDraft, dropDraft, previewButtons, closePreview, EXPIRED } = require('../lib/preview');
-
-function faqModal(customId, title, faq) {
-  const question = new TextInputBuilder()
-    .setCustomId('question').setLabel('Question').setStyle(TextInputStyle.Short).setMaxLength(200).setRequired(true);
-  const answer = new TextInputBuilder()
-    .setCustomId('answer').setLabel('Answer').setStyle(TextInputStyle.Paragraph).setMaxLength(4000).setRequired(true);
-  if (faq) {
-    question.setValue(faq.question);
-    answer.setValue(faq.answer);
-  }
-  return new ModalBuilder().setCustomId(customId).setTitle(title).addComponents(
-    new ActionRowBuilder().addComponents(question),
-    new ActionRowBuilder().addComponents(answer),
-  );
-}
 
 function previewMessage(id, draft) {
   return {
@@ -71,17 +51,8 @@ module.exports = {
     if (!faqs.length) return interaction.reply({ content: '❌ Add some FAQs first with `/faqmanage add`.', flags: MessageFlags.Ephemeral });
     const channel = interaction.options.getChannel('channel') || interaction.channel;
 
-    const embed = new EmbedBuilder()
-      .setColor(EMBED_COLOR)
-      .setTitle('❓ Frequently Asked Questions')
-      .setDescription('Pick a question from the menu below to see the answer.\n\n' + faqs.slice(0, 25).map(f => `• ${f.question}`).join('\n'));
-    const menu = new StringSelectMenuBuilder()
-      .setCustomId('faq:select')
-      .setPlaceholder('Choose a question…')
-      .addOptions(faqs.slice(0, 25).map(f => ({ label: f.question.slice(0, 100), value: String(f.id) })));
-
     try {
-      await channel.send({ embeds: [embed], components: [new ActionRowBuilder().addComponents(menu)] });
+      await channel.send(faqPanel(faqs));
       const note = faqs.length > 25 ? '\n⚠️ Only the first 25 questions fit in a dropdown.' : '';
       await interaction.reply({ content: `✅ FAQ panel posted in ${channel}.${note}`, flags: MessageFlags.Ephemeral });
     } catch {

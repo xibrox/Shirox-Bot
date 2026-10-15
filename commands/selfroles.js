@@ -1,15 +1,13 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-const { EMBED_COLOR } = require('../lib/colors');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { MAX_SELF_ROLES, buildSelfRolePanel } = require('../lib/selfRoles');
 const { checkAssignableRole } = require('../lib/moderation');
-
-const MAX_ROLES = 10;
 
 const data = new SlashCommandBuilder()
   .setName('selfroles')
   .setDescription('Post a panel of buttons members can click to give themselves roles')
   .addStringOption(option => option.setName('title').setDescription('Panel title').setMaxLength(200).setRequired(true))
   .addRoleOption(option => option.setName('role1').setDescription('Role 1').setRequired(true));
-for (let i = 2; i <= MAX_ROLES; i++) {
+for (let i = 2; i <= MAX_SELF_ROLES; i++) {
   data.addRoleOption(option => option.setName(`role${i}`).setDescription(`Role ${i}`));
 }
 data
@@ -23,7 +21,7 @@ module.exports = {
 
   async execute(interaction) {
     const roles = [];
-    for (let i = 1; i <= MAX_ROLES; i++) {
+    for (let i = 1; i <= MAX_SELF_ROLES; i++) {
       const role = interaction.options.getRole(`role${i}`);
       if (role && !roles.some(r => r.id === role.id)) roles.push(role);
     }
@@ -33,26 +31,10 @@ module.exports = {
       if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
     }
 
-    const embed = new EmbedBuilder()
-      .setColor(EMBED_COLOR)
-      .setTitle(interaction.options.getString('title'))
-      .setDescription(
-        (interaction.options.getString('description') || 'Click a button to get or remove a role.') +
-        '\n\n' + roles.map(r => `• ${r}`).join('\n'),
-      );
-
-    const buttons = roles.map(role =>
-      new ButtonBuilder()
-        .setCustomId(`selfrole:${role.id}`)
-        .setLabel(role.name.slice(0, 80))
-        .setStyle(ButtonStyle.Secondary));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 5) {
-      rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
-    }
+    const panel = buildSelfRolePanel(interaction.options.getString('title'), interaction.options.getString('description'), roles);
 
     try {
-      await interaction.channel.send({ embeds: [embed], components: rows });
+      await interaction.channel.send(panel);
       await interaction.reply({ content: '✅ Self-role panel posted.', flags: MessageFlags.Ephemeral });
     } catch {
       await interaction.reply({ content: "❌ I couldn't post in this channel.", flags: MessageFlags.Ephemeral });
