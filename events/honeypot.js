@@ -3,6 +3,7 @@ const { getGuildConfig } = require("../lib/guildConfig");
 const { isActive } = require("../lib/features");
 const { softban } = require("../lib/moderation");
 const { createLogEmbed, sendLog, truncate, userField, suppressLogsFor } = require("../lib/logger");
+const { recordAction } = require("../lib/modHistory");
 
 // Hacked accounts usually spam several channels at once; only act once per user
 const inProgress = new Set();
@@ -50,6 +51,7 @@ module.exports = {
 
             const labels = { softban: "Soft banned (last 24h of messages deleted)", ban: "Banned (last 24h of messages deleted)", kick: "Kicked" };
             embed.addFields({ name: "Action", value: labels[action] });
+            recordAction(message.guild.id, { type: "honeypot", targetId: member.id, moderatorId: message.client.user.id, reason, extra: { action } });
         } catch (err) {
             console.error(`Honeypot action failed in ${message.guild.name}:`, err.message);
             embed.addFields({ name: "❌ Action failed", value: err.message });

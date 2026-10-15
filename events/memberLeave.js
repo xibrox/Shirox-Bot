@@ -4,6 +4,7 @@ const { isActive } = require("../lib/features");
 const { DEFAULT_GOODBYE, sendGreeting } = require("../lib/greetings");
 const { saveMemberRoles } = require("../lib/savedRoles");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField, isSuppressed } = require("../lib/logger");
+const { recordAction } = require("../lib/modHistory");
 
 module.exports = {
     name: Events.GuildMemberRemove,
@@ -22,6 +23,7 @@ module.exports = {
         }
 
         const kick = await findAuditEntry(member.guild, AuditLogEvent.MemberKick, member.id);
+        if (kick) recordAction(member.guild.id, { type: "kick", targetId: member.id, moderatorId: kick.executor?.id ?? null, reason: kick.reason || null });
         const embed = kick
             ? createLogEmbed("danger", "👢 Member kicked").addFields(
                 { name: "User", value: userField(member.user) },

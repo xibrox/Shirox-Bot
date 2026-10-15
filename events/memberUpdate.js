@@ -1,5 +1,6 @@
 const { Events } = require("discord.js");
 const { AuditLogEvent, createLogEmbed, sendLog, findAuditEntry, userField } = require("../lib/logger");
+const { recordAction } = require("../lib/modHistory");
 
 module.exports = {
     name: Events.GuildMemberUpdate,
@@ -31,6 +32,13 @@ module.exports = {
         if (oldTimeout !== newTimeout) {
             const isTimedOut = newTimeout && newTimeout > Date.now();
             const entry = await findAuditEntry(guild, AuditLogEvent.MemberUpdate, newMember.id);
+            recordAction(guild.id, {
+                type: isTimedOut ? "timeout" : "untimeout",
+                targetId: newMember.id,
+                moderatorId: entry?.executor?.id ?? null,
+                reason: entry?.reason || null,
+                ...(isTimedOut && { extra: { until: newTimeout } }),
+            });
             const embed = createLogEmbed(isTimedOut ? "warning" : "success", isTimedOut ? "🔇 Member timed out" : "🔊 Timeout removed")
                 .addFields({ name: "User", value: userField(newMember.user) });
             if (isTimedOut) embed.addFields({ name: "Until", value: `<t:${Math.floor(newTimeout / 1000)}:F>` });
