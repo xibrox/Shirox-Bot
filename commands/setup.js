@@ -3,6 +3,7 @@ const { EMBED_COLOR } = require('../lib/colors');
 const { getGuildConfig } = require('../lib/guildConfig');
 const { permissionNames, listText } = require('../lib/permissions');
 const { SECTIONS } = require('../lib/setup/sections');
+const { guardSlowReply } = require('../lib/slowReply');
 
 const OUT_OF_DATE = { content: '⚠️ This dashboard is out of date. Run /setup again.', flags: MessageFlags.Ephemeral };
 
@@ -50,7 +51,12 @@ async function route(interaction, kind) {
   if (!handler) return interaction.reply(OUT_OF_DATE);
   // The dashboard is private, but permissions can change while it's open
   if (!canOpen(section, interaction)) return interaction.reply(permissionReply(section));
-  await handler(interaction, action, arg);
+  const done = guardSlowReply(interaction);
+  try {
+    await handler(interaction, action, arg);
+  } finally {
+    done();
+  }
   // A handler that didn't recognise the action left the interaction unanswered
   if (!interaction.replied && !interaction.deferred) await interaction.reply(OUT_OF_DATE);
 }
