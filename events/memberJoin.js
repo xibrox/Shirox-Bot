@@ -1,6 +1,7 @@
 const { Events } = require("discord.js");
 const { getGuildConfig } = require("../lib/guildConfig");
 const { isActive } = require("../lib/features");
+const { recordAction } = require("../lib/modHistory");
 const { DEFAULT_WELCOME, sendGreeting } = require("../lib/greetings");
 const { restoreMemberRoles } = require("../lib/savedRoles");
 const { createLogEmbed, sendLog, userField, suppressLogsFor } = require("../lib/logger");
@@ -25,6 +26,25 @@ async function kickIfTooNew(member, config) {
             { name: "User", value: userField(member.user) },
             { name: "Account created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>` },
         );
+    await sendLog(member.guild, "moderation", embed);
+    return true;
+}
+
+// With the join whitelist on, only listed people may join (bots are added by admins, so they pass)
+async function kickIfNotWhitelisted(member, config) {
+    if (!config.joinWhitelist || member.user.bot) return false;
+    if ((config.joinWhitelistIds ?? []).includes(member.id) || !member.kickable) return false;
+
+    await member.send(
+        `🔐 **${member.guild.name}** only lets in approved members. Ask a moderator to add you, then join again.`,
+    ).catch(() => {});
+    suppressLogsFor(member.id);
+    await member.kick("Join whitelist: not on the list").catch(() => {});
+    recordAction(member.guild.id, { type: "kick", targetId: member.id, moderatorId: member.client?.user.id ?? null, reason: "Not on the join whitelist" });
+
+    const embed = createLogEmbed("danger", "🔐 Not on the join whitelist")
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields({ name: "User", value: userField(member.user) }, { name: "Action", value: "Kicked" });
     await sendLog(member.guild, "moderation", embed);
     return true;
 }
@@ -66,6 +86,7 @@ module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member) {
         const config = getGuildConfig(member.guild.id);
+        if (await kickIfNotWhitelisted(member, config)) return;
         if (await kickIfTooNew(member, config)) return;
 
         await restoreRoles(member, config);
