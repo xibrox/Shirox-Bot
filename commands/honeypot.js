@@ -1,12 +1,6 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } = require('discord.js');
-const { COLORS } = require('../lib/colors');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { ACTION_LABELS, honeypotError, honeypotWarningEmbed } = require('../lib/honeypot');
 const { getGuildConfig, updateGuildConfig } = require('../lib/guildConfig');
-
-const ACTION_LABELS = {
-  softban: 'Soft ban (ban + instant unban, deletes their last 24h of messages)',
-  ban: 'Ban (deletes their last 24h of messages)',
-  kick: 'Kick',
-};
 
 module.exports = {
   category: 'setup',
@@ -48,28 +42,11 @@ module.exports = {
       const channel = interaction.options.getChannel('channel');
       const action = interaction.options.getString('action') || 'softban';
       const postWarning = interaction.options.getBoolean('post_warning') ?? true;
-      const me = interaction.guild.members.me;
-
-      const needed = action === 'kick' ? PermissionFlagsBits.KickMembers : PermissionFlagsBits.BanMembers;
-      if (!me.permissions.has(needed)) {
-        return interaction.reply({ content: `❌ I need the **${action === 'kick' ? 'Kick' : 'Ban'} Members** permission for this.`, flags: MessageFlags.Ephemeral });
-      }
-      if (!channel.permissionsFor(me).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageMessages])) {
-        return interaction.reply({ content: `❌ I need View Channel and Manage Messages in ${channel}.`, flags: MessageFlags.Ephemeral });
-      }
+      const error = honeypotError(interaction.guild, channel, action);
+      if (error) return interaction.reply({ content: error, flags: MessageFlags.Ephemeral });
 
       updateGuildConfig(interaction.guild.id, { honeypotChannelId: channel.id, honeypotAction: action });
-
-      if (postWarning) {
-        const embed = new EmbedBuilder()
-          .setColor(COLORS.danger)
-          .setTitle('⚠️ DO NOT SEND MESSAGES IN THIS CHANNEL')
-          .setDescription(
-            'This channel is a trap for hacked accounts and spam bots.\n\n' +
-            `Anyone who posts here is **automatically ${action === 'kick' ? 'kicked' : action === 'ban' ? 'banned' : 'removed from the server and has their recent messages deleted'}**.`,
-          );
-        await channel.send({ embeds: [embed] }).catch(() => {});
-      }
+      if (postWarning) await channel.send({ embeds: [honeypotWarningEmbed(action)] }).catch(() => {});
 
       return interaction.reply({
         content: `🍯 Honeypot active in ${channel}.\nAction: **${ACTION_LABELS[action]}**\nStaff with **Manage Messages** are ignored.\n` +
