@@ -33,12 +33,16 @@ Pause/Resume and Disable are disabled while nothing is set up (no channel).
 New config flags: `welcomeOff`, `goodbyeOff`, `logsOff`, `honeypotOff`. Each is
 `true` when paused and absent otherwise.
 
-`lib/features.js` (new) has `isActive(config, feature)`, which is true when
-`config[<feature>ChannelId]` is set and `config[<feature>Off]` is not. The
-`<feature>` keys are `welcome`, `goodbye`, `log`/`logs`, and `honeypot`. The
-log channel key is `logChannelId` and its flag is `logsOff`. `isActive`
-encodes both through one mapping table so callers never build key names
-themselves.
+`lib/features.js` (new) exports `FEATURES` and `isActive(config, feature)`.
+`FEATURES` maps each feature id to its keys:
+
+- `welcome` → `welcomeChannelId` / `welcomeOff`
+- `goodbye` → `goodbyeChannelId` / `goodbyeOff`
+- `logs` → `logChannelId` / `logsOff`
+- `honeypot` → `honeypotChannelId` / `honeypotOff`
+
+`isActive` is true when the channel key is set and the off key is not.
+Callers never build key names themselves.
 
 Events use `isActive`:
 
