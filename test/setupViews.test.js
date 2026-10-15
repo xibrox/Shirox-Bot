@@ -13,6 +13,9 @@ const FILLED = {
     automodMinAccountAgeDays: 7, honeypotChannelId: "c4", honeypotAction: "ban", autoRoleId: "r1", botAutoRoleId: "r2",
     restoreRoles: true,
     joinWhitelist: true,
+    embedFix: true,
+    embedFixHide: true,
+    embedFixServices: { twitter: "vxtwitter.com", tiktok: "off" },
     joinWhitelistIds: Array.from({ length: 40 }, (_, i) => `${800000000000000000 + i}`),
     automodInviteAllow: Array.from({ length: 25 }, (_, i) => ({ id: `${900000000000000000 + i}`, name: `Server ${"n".repeat(120)}` })),
 };
